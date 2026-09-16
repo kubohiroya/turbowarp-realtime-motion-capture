@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MultiviewPoseExtension } from "../src/extension.js";
+import {
+  requireConsistentFeatureFlags,
+  type MultiviewPoseFeatureFlags,
+} from "../config/feature-flags.js";
 import { WEBRTC_CAPABILITY_KEY } from "../src/webrtc-capability.js";
 import { AFRAME_CAPABILITY_KEY } from "../src/avatar/aframe-port.js";
 import { PATTERN_WRAP_US } from "../src/frame-sync/pattern.js";
@@ -689,5 +693,94 @@ describe("MultiviewPoseExtension offer QR blocks", () => {
     ).rejects.toThrow(/too large/u);
     expect(extension.offerQrState()).toBe("error");
     expect(extension.offerQrPartCount()).toBe(0);
+  });
+});
+
+/** Every flag off, so each case turns on only what it is about. */
+const allFlagsOff: MultiviewPoseFeatureFlags = {
+  qrCourierPairing: false,
+  webgpuMoveNetMultiPose: false,
+  protocolV1Codec: false,
+  cameraCalibrationV1: false,
+  avatarRetargetV1: false,
+  frameSyncPatternV1: false,
+  timeSpaceSyncDelegateV1: false,
+  poseFusion3D: false,
+  glowStickMarkers: false,
+};
+
+describe("handing the optical time path away", () => {
+  it("refuses to run both implementations of it at once", () => {
+    // Two leases on one camera and two overlays covering the screen, neither of
+    // which announces itself: a second lease is granted, a second overlay draws
+    // on top of the first.
+    expect(() =>
+      requireConsistentFeatureFlags({
+        ...allFlagsOff,
+        frameSyncPatternV1: true,
+        timeSpaceSyncDelegateV1: true,
+      }),
+    ).toThrowError(/lease the same camera twice/);
+  });
+
+  it("allows either one on its own", () => {
+    expect(() =>
+      requireConsistentFeatureFlags({
+        ...allFlagsOff,
+        frameSyncPatternV1: true,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      requireConsistentFeatureFlags({
+        ...allFlagsOff,
+        timeSpaceSyncDelegateV1: true,
+      }),
+    ).not.toThrow();
+  });
+
+  it("leaves the calibration pair alone, which moves independently", () => {
+    // During the move one path can be delegated while the other is not.
+    expect(() =>
+      requireConsistentFeatureFlags({
+        ...allFlagsOff,
+        cameraCalibrationV1: true,
+        timeSpaceSyncDelegateV1: true,
+      }),
+    ).not.toThrow();
+  });
+
+  it("sends an old opcode to the other extension rather than to the path here", () => {
+    setup();
+    const extension = new MultiviewPoseExtension({
+      frameSyncEnabled: false,
+      timeSpaceSyncDelegated: true,
+    });
+    // The local path would have said the flag is off. These messages can only
+    // come from the adapter, so the opcode went there.
+    expect(() => extension.showFrameSyncPattern()).toThrowError(/acknowledge/);
+    expect(
+      extension.startFrameSyncDecoder({ CAMERA_ID: "left", SECONDS: 8 }),
+    ).rejects.toThrow(/turbowarp-time-space-sync is not loaded/);
+  });
+
+  it("keeps the old opcodes in the palette while the path is delegated", () => {
+    setup();
+    const info = new MultiviewPoseExtension({
+      frameSyncEnabled: false,
+      timeSpaceSyncDelegated: true,
+    }).getInfo() as { blocks: Array<{ opcode: string }> };
+    const opcodes = info.blocks.map((block) => block.opcode);
+    // They are what an existing project calls, and answering them is the point.
+    expect(opcodes).toContain("startFrameSyncDecoder");
+    expect(opcodes).toContain("acknowledgeFrameSyncFlashing");
+  });
+
+  it("still says the flag is off when nothing was delegated", () => {
+    setup();
+    const extension = new MultiviewPoseExtension({
+      frameSyncEnabled: false,
+      timeSpaceSyncDelegated: false,
+    });
+    expect(() => extension.showFrameSyncPattern()).toThrowError(/is disabled/);
   });
 });

@@ -1,6 +1,9 @@
 import definitions from "./block-definitions.json";
 import { extensionConfig } from "./config.js";
-import { featureFlags } from "../config/feature-flags.js";
+import {
+  featureFlags,
+  requireConsistentFeatureFlags,
+} from "../config/feature-flags.js";
 import { qrConfig } from "../config/qr-config.js";
 import {
   createQrCourierParts,
@@ -19,6 +22,7 @@ import type { CalibrationBackendPort } from "./calibration/types.js";
 import { AvatarRetargetController } from "./avatar/controller.js";
 import type { AvatarPoseSolverPort } from "./avatar/types.js";
 import { FrameSyncPatternController } from "./frame-sync/controller.js";
+import { FrameSyncDelegate } from "./frame-sync/delegate.js";
 import { FrameSyncPatternDisplay } from "./frame-sync/pattern-display.js";
 import { PATTERN_WRAP_US } from "./frame-sync/pattern.js";
 import { requireSynchronizedTimeSource } from "./frame-sync/time-source.js";
@@ -51,6 +55,7 @@ interface BlockDefinition {
     | "cameraCalibrationV1"
     | "avatarRetargetV1"
     | "frameSyncPatternV1"
+    | "timeSpaceSyncDelegateV1"
     | "poseFusion3D"
     | "glowStickMarkers";
   blockType: BlockTypeName;
@@ -73,6 +78,7 @@ export interface MultiviewPoseExtensionOptions {
   calibrationEnabled?: boolean;
   avatarEnabled?: boolean;
   frameSyncEnabled?: boolean;
+  timeSpaceSyncDelegated?: boolean;
   fusionEnabled?: boolean;
   markersEnabled?: boolean;
   markerSampler?: MarkerImageSamplerPort;
@@ -97,6 +103,13 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   private readonly calibrationEnabled: boolean;
   private readonly avatarEnabled: boolean;
   private readonly frameSyncEnabled: boolean;
+  /**
+   * Whether the optical time path has been handed to time-space-sync.
+   *
+   * While this is on nothing here builds a decoder or an overlay: the two would
+   * lease the same camera and cover the screen twice, and neither says so.
+   */
+  private readonly timeSpaceSyncDelegated: boolean;
   private readonly fusionEnabled: boolean;
   private readonly markersEnabled: boolean;
   private readonly errorCorrectionLevel: QrErrorCorrectionLevel;
@@ -107,6 +120,7 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   private readonly calibration: CameraCalibrationController;
   private readonly avatar: AvatarRetargetController;
   private frameSync: FrameSyncPatternController | undefined;
+  private frameSyncDelegate: FrameSyncDelegate | undefined;
   private frameSyncOverlay: PatternDisplayPort | undefined;
   private readonly fusion: PoseFusionController;
   private session: OfferQrSession | undefined;
@@ -138,6 +152,10 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   };
 
   public constructor(options: MultiviewPoseExtensionOptions = {}) {
+    // Before anything is built. A combination that would run two
+    // implementations of one path has to stop here, while there is still
+    // somewhere to put the reason.
+    requireConsistentFeatureFlags();
     this.enabled = options.enabled ?? featureFlags.qrCourierPairing;
     this.poseEnabled =
       options.poseEnabled ?? featureFlags.webgpuMoveNetMultiPose;
@@ -148,6 +166,8 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     this.avatarEnabled = options.avatarEnabled ?? featureFlags.avatarRetargetV1;
     this.frameSyncEnabled =
       options.frameSyncEnabled ?? featureFlags.frameSyncPatternV1;
+    this.timeSpaceSyncDelegated =
+      options.timeSpaceSyncDelegated ?? featureFlags.timeSpaceSyncDelegateV1;
     this.fusionEnabled = options.fusionEnabled ?? featureFlags.poseFusion3D;
     this.markersEnabled =
       options.markersEnabled ?? featureFlags.glowStickMarkers;
@@ -544,21 +564,43 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     return this.avatar.error();
   }
 
+  public acknowledgeFrameSyncFlashing(): void {
+    this.requireDelegate().acknowledgeFlashing(Date.now() * 1000);
+  }
+
+  public setFrameSyncDisplayRefresh(args: { REFRESH_US: unknown }): void {
+    this.requireDelegate().setDisplayRefreshUs(
+      Scratch.Cast.toNumber(args.REFRESH_US),
+    );
+  }
+
   public showFrameSyncPattern(): void {
+    if (this.timeSpaceSyncDelegated) {
+      this.requireDelegate().showPattern();
+      return;
+    }
     this.requireFrameSyncEnabled();
     this.requireFrameSyncDisplay().show();
   }
 
   public hideFrameSyncPattern(): void {
+    if (this.timeSpaceSyncDelegated) {
+      this.requireDelegate().hidePattern();
+      return;
+    }
     this.requireFrameSyncEnabled();
     this.frameSyncOverlay?.hide();
   }
 
   public frameSyncPatternShown(): boolean {
+    if (this.timeSpaceSyncDelegated)
+      return this.requireDelegate().patternShown();
     return this.frameSyncOverlay?.visible() ?? false;
   }
 
   public frameSyncPatternWrapUs(): number {
+    if (this.timeSpaceSyncDelegated)
+      return this.requireDelegate().patternWrapUs();
     return PATTERN_WRAP_US;
   }
 
@@ -566,6 +608,13 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     CAMERA_ID: unknown;
     SECONDS: unknown;
   }): Promise<void> {
+    if (this.timeSpaceSyncDelegated) {
+      await this.requireDelegate().start(
+        Scratch.Cast.toString(args.CAMERA_ID),
+        Scratch.Cast.toNumber(args.SECONDS),
+      );
+      return;
+    }
     this.requireFrameSyncEnabled();
     await this.requireFrameSyncController().start({
       cameraId: Scratch.Cast.toString(args.CAMERA_ID),
@@ -576,6 +625,12 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   public async calibrateFrameSyncDecoder(args: {
     SECONDS: unknown;
   }): Promise<void> {
+    if (this.timeSpaceSyncDelegated) {
+      await this.requireDelegate().recalibrate(
+        Scratch.Cast.toNumber(args.SECONDS),
+      );
+      return;
+    }
     this.requireFrameSyncEnabled();
     await this.requireFrameSyncController().recalibrate(
       Scratch.Cast.toNumber(args.SECONDS),
@@ -583,48 +638,87 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   }
 
   public async stopFrameSyncDecoder(): Promise<void> {
+    if (this.timeSpaceSyncDelegated) {
+      await this.requireDelegate().stop();
+      return;
+    }
     await this.frameSync?.stop();
   }
 
   public frameSyncDecoderState(): string {
+    if (this.timeSpaceSyncDelegated) return this.requireDelegate().state();
     return this.frameSync?.state() ?? "idle";
   }
 
   public frameSyncDecoderError(): string {
+    if (this.timeSpaceSyncDelegated) return this.requireDelegate().errorCode();
     return this.frameSync?.errorCode() ?? "";
   }
 
   public frameSyncDecodeRate(): number {
+    if (this.timeSpaceSyncDelegated) return 0;
     return this.frameSync?.decodeRate() ?? 0;
   }
 
   public frameSyncObservationAvailable(): boolean {
+    if (this.timeSpaceSyncDelegated) {
+      return this.requireDelegate().observationAvailable();
+    }
     return (this.frameSync?.pendingObservations() ?? 0) > 0;
   }
 
   public takeFrameSyncObservation(): void {
+    if (this.timeSpaceSyncDelegated) {
+      this.requireDelegate().takeObservation();
+      return;
+    }
     this.requireFrameSyncEnabled();
     this.requireFrameSyncController().takeObservation();
   }
 
   public frameSyncFrameTimestampUs(): number {
+    if (this.timeSpaceSyncDelegated)
+      return this.requireDelegate().frameTimestampUs();
     return this.frameSync?.currentObservation()?.frameTimestampUs ?? 0;
   }
 
   public frameSyncFrameAgeUs(): number {
+    if (this.timeSpaceSyncDelegated) return this.requireDelegate().frameAgeUs();
     return this.frameSync?.currentObservation()?.frameAgeUs ?? 0;
   }
 
   public frameSyncPatternTimestampUs(): number {
+    if (this.timeSpaceSyncDelegated)
+      return this.requireDelegate().patternTimestampUs();
     return this.frameSync?.currentObservation()?.patternTimestampUs ?? 0;
   }
 
-  private requireFrameSyncEnabled(): void {
-    if (!this.frameSyncEnabled) {
+  /**
+   * The adapter, built once the path has actually been handed over.
+   *
+   * Never built otherwise: the flags forbid both paths at once, and an adapter
+   * sitting ready beside a running local decoder is the second half of the
+   * double capture they exist to prevent.
+   */
+  private requireDelegate(): FrameSyncDelegate {
+    if (!this.timeSpaceSyncDelegated) {
       throw new Error(
-        "Frame sync pattern v1 is disabled. Enable it before the project starts.",
+        "The optical time path has not been delegated. Turn on timeSpaceSyncDelegateV1 before the project starts.",
       );
     }
+    if (!this.frameSyncDelegate) {
+      this.frameSyncDelegate = new FrameSyncDelegate({ runtime: this.runtime });
+    }
+    return this.frameSyncDelegate;
+  }
+
+  private requireFrameSyncEnabled(): void {
+    if (this.frameSyncEnabled) return;
+    // Reached only when neither path is on: every frame sync opcode routes to
+    // the adapter before getting here while the path is delegated.
+    throw new Error(
+      "Frame sync pattern v1 is disabled. Enable it before the project starts.",
+    );
   }
 
   private requireFrameSyncDisplay(): PatternDisplayPort {
@@ -866,7 +960,14 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     if (feature === "protocolV1Codec") return this.protocolEnabled;
     if (feature === "cameraCalibrationV1") return this.calibrationEnabled;
     if (feature === "avatarRetargetV1") return this.avatarEnabled;
-    if (feature === "frameSyncPatternV1") return this.frameSyncEnabled;
+    // The old opcodes stay in the palette while the path is delegated: they
+    // are what an existing project calls, and answering them is the point of
+    // the adapter.
+    if (feature === "frameSyncPatternV1") {
+      return this.frameSyncEnabled || this.timeSpaceSyncDelegated;
+    }
+    if (feature === "timeSpaceSyncDelegateV1")
+      return this.timeSpaceSyncDelegated;
     if (feature === "poseFusion3D") return this.fusionEnabled;
     return this.markersEnabled;
   }

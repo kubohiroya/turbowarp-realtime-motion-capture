@@ -17,6 +17,9 @@ importers:
       '@kubohiroya/turbowarp-jsqr':
         specifier: 0.3.0
         version: 0.3.0(@kubohiroya/turbowarp-camera-source@0.5.0)
+      '@kubohiroya/turbowarp-time-space-sync':
+        specifier: 0.1.0
+        version: 0.1.0
       '@kubohiroya/turbowarp-webrtc':
         specifier: 0.3.0
         version: 0.3.0
@@ -309,6 +312,10 @@ packages:
     resolution: {integrity: sha512-0Ji1iL/HSl2PijGjcuPMOTN3cnc73oxGdmiiT9UIHL3BIUUPjaLDf3HCyoHyFaawdSIXQ8sspQt8gezlkv57uw==}
     engines: {node: '>=22.18.0'}
 
+  '@kubohiroya/turbowarp-camera-source@0.7.0':
+    resolution: {integrity: sha512-XKCahVb/i90PT5UzW4SlE2gw3W5AIFlzL9DV7c7oDyUPGwVae+lSaTYq6JIJS2gfZ2qfMpI7IpuYZfgy7SAsFw==}
+    engines: {node: '>=22.18.0'}
+
   '@kubohiroya/turbowarp-extension-template@0.4.0':
     resolution: {integrity: sha512-JXe+Iy/mIfotidshjKrmVSMiem4wcRDdu/8897265pp3C6gSnnJP4/6ob7aA3n/h8zMqHqJRJ5l0CyaQLtslqQ==}
     engines: {node: '>=22.18.0'}
@@ -321,6 +328,10 @@ packages:
     peerDependenciesMeta:
       '@kubohiroya/turbowarp-camera-source':
         optional: true
+
+  '@kubohiroya/turbowarp-time-space-sync@0.1.0':
+    resolution: {integrity: sha512-89g4dmnxotpcDPOMO2OiGsDw82uDcyZSjDItcxG2jOrET8BSKWfuVyBaJLMOXfqHtO/HbVH9ZP2DzOxZv2tabQ==}
+    engines: {node: '>=22.18.0'}
 
   '@kubohiroya/turbowarp-webrtc@0.3.0':
     resolution: {integrity: sha512-ftnJNOtR3BZhEpu6OPWMiMF8CwWQiFuqpJQqEkScvZRyJ2eal2cSamnz6Oc/rZdwew+Clsnan0Df67gcVurNRw==}
@@ -1510,6 +1521,8 @@ snapshots:
 
   '@kubohiroya/turbowarp-camera-source@0.5.0': {}
 
+  '@kubohiroya/turbowarp-camera-source@0.7.0': {}
+
   '@kubohiroya/turbowarp-extension-template@0.4.0': {}
 
   '@kubohiroya/turbowarp-jsqr@0.3.0(@kubohiroya/turbowarp-camera-source@0.5.0)':
@@ -1517,6 +1530,10 @@ snapshots:
       jsqr: 1.4.0
     optionalDependencies:
       '@kubohiroya/turbowarp-camera-source': 0.5.0
+
+  '@kubohiroya/turbowarp-time-space-sync@0.1.0':
+    dependencies:
+      '@kubohiroya/turbowarp-camera-source': 0.7.0
 
   '@kubohiroya/turbowarp-webrtc@0.3.0': {}
 

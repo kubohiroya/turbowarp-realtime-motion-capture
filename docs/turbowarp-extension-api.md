@@ -770,6 +770,25 @@ Returns the display time decoded out of the taken frame, within the current patt
 | Type | Reporter |
 | Opcode | `frameSyncPatternTimestampUs` |
 
+### `acknowledge that the frame sync pattern flashes`
+
+Records that the operator was warned the full screen pattern flashes. Time Space Sync will not show it otherwise. The older blocks asked for nothing here because the path they drove asked for nothing; a project that delegates accepts this extra step.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `acknowledgeFrameSyncFlashing` |
+
+### `set frame sync display refresh to [REFRESH_US] us`
+
+Tells the decoder how long each code stays on screen. Only needed when the pattern is shown from another computer; when it is shown from this one the display has measured it. It sets the whole width of the constraint an observation carries, so assuming 60 Hz for a projector running at 50 biases every result with nothing saying so.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `setFrameSyncDisplayRefresh` |
+| `REFRESH_US` | Number, default: `16667` |
+
 ### `start pose fusion delay [DELAY_MS] ms jitter [JITTER_MS] ms min keypoint score [MIN_SCORE]`
 
 Starts the multi-camera jitter buffer that fuses one past instant behind the newest frame.
