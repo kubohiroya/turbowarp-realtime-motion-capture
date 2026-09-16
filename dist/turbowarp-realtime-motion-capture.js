@@ -80675,7 +80675,7 @@
   	}
   	capability() {
   		const candidate = this.injected ?? this.runtime["kubohiroyaCameraSourceCapability"];
-  		if (typeof candidate !== "object" || candidate === null) throw new Error("Camera Source is not loaded, or its calibration profile feature is off. Load it and turn on calibrationProfilesV1, or turn off cameraCalibrationDelegateV1 here.");
+  		if (typeof candidate !== "object" || candidate === null) throw new Error("Camera Source is not loaded. Load it, or turn off cameraCalibrationDelegateV1 here and use this extension's own calibration path.");
   		const missing = MEMBERS.filter((name) => typeof candidate[name] !== "function");
   		if (missing.length > 0) throw new Error(`Camera Source does not publish the calibration profile API: ${missing.join(", ")} missing.`);
   		return candidate.requireVersion(REQUIRED_VERSION);
