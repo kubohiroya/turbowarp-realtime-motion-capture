@@ -972,6 +972,28 @@
   //#endregion
   //#region config/feature-flags.ts
   var overrides = globalThis.__TWMP_FEATURE_FLAGS__;
+  /**
+  * Pairs where one flag runs the old path and the other hands it away.
+  *
+  * Turning both on runs two implementations of the same thing at once: two
+  * leases on one camera, two overlays covering the screen, two corrections
+  * applied to the same observation. None of those announce themselves -- a
+  * second lease is granted, a second overlay is drawn on top of the first, a
+  * doubled correction is a plausible number -- so the combination is refused
+  * before anything starts rather than diagnosed afterwards.
+  */
+  var exclusivePairs = [["frameSyncPatternV1", "timeSpaceSyncDelegateV1"]];
+  /**
+  * Refuses a combination that would run two implementations of one thing.
+  *
+  * Called when the extension is built rather than when this module loads: a
+  * throw during module evaluation gives TurboWarp nothing to show the operator,
+  * and the message is the only thing that explains what to change.
+  */
+  function requireConsistentFeatureFlags(flags = featureFlags) {
+  	for (const [older, delegate] of exclusivePairs) if (flags[older] && flags[delegate]) throw new Error(`${older} and ${delegate} are both on. One runs the path here and the other hands it to another extension; together they lease the same camera twice and draw two overlays. Turn off ${older} to delegate, or ${delegate} to keep the path here.`);
+  	return flags;
+  }
   /** Startup-fixed flags. Experimental QR and pose paths stay independently opt-in. */
   var featureFlags = Object.freeze({
   	qrCourierPairing: overrides?.qrCourierPairing === true,
@@ -980,6 +1002,7 @@
   	cameraCalibrationV1: overrides?.cameraCalibrationV1 === true,
   	avatarRetargetV1: overrides?.avatarRetargetV1 === true,
   	frameSyncPatternV1: overrides?.frameSyncPatternV1 === true,
+  	timeSpaceSyncDelegateV1: overrides?.timeSpaceSyncDelegateV1 === true,
   	poseFusion3D: overrides?.poseFusion3D === true,
   	glowStickMarkers: overrides?.glowStickMarkers === true
   });
@@ -82107,12 +82130,14 @@
   		this.targetRemovedListener = (target) => {
   			if (isTarget(target) && this.skins.isDisplaying(target)) this.endOfferQrDisplay();
   		};
+  		requireConsistentFeatureFlags();
   		this.enabled = options.enabled ?? featureFlags.qrCourierPairing;
   		this.poseEnabled = options.poseEnabled ?? featureFlags.webgpuMoveNetMultiPose;
   		this.protocolEnabled = options.protocolEnabled ?? featureFlags.protocolV1Codec;
   		this.calibrationEnabled = options.calibrationEnabled ?? featureFlags.cameraCalibrationV1;
   		this.avatarEnabled = options.avatarEnabled ?? featureFlags.avatarRetargetV1;
   		this.frameSyncEnabled = options.frameSyncEnabled ?? featureFlags.frameSyncPatternV1;
+  		this.timeSpaceSyncDelegated = options.timeSpaceSyncDelegated ?? featureFlags.timeSpaceSyncDelegateV1;
   		this.fusionEnabled = options.fusionEnabled ?? featureFlags.poseFusion3D;
   		this.markersEnabled = options.markersEnabled ?? featureFlags.glowStickMarkers;
   		this.errorCorrectionLevel = options.errorCorrectionLevel ?? qrConfig.errorCorrectionLevel;
@@ -82435,7 +82460,9 @@
   		return this.frameSync?.currentObservation()?.patternTimestampUs ?? 0;
   	}
   	requireFrameSyncEnabled() {
-  		if (!this.frameSyncEnabled) throw new Error("Frame sync pattern v1 is disabled. Enable it before the project starts.");
+  		if (this.frameSyncEnabled) return;
+  		if (this.timeSpaceSyncDelegated) throw new Error("The optical time path has been handed to turbowarp-time-space-sync. Use its blocks, or turn timeSpaceSyncDelegateV1 off and frameSyncPatternV1 on to keep using this one.");
+  		throw new Error("Frame sync pattern v1 is disabled. Enable it before the project starts.");
   	}
   	requireFrameSyncDisplay() {
   		if (!this.frameSyncOverlay) this.frameSyncOverlay = new FrameSyncPatternDisplay({ timeSource: requireSynchronizedTimeSource(this.runtime) });

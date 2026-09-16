@@ -1,6 +1,9 @@
 import definitions from "./block-definitions.json";
 import { extensionConfig } from "./config.js";
-import { featureFlags } from "../config/feature-flags.js";
+import {
+  featureFlags,
+  requireConsistentFeatureFlags,
+} from "../config/feature-flags.js";
 import { qrConfig } from "../config/qr-config.js";
 import {
   createQrCourierParts,
@@ -73,6 +76,7 @@ export interface MultiviewPoseExtensionOptions {
   calibrationEnabled?: boolean;
   avatarEnabled?: boolean;
   frameSyncEnabled?: boolean;
+  timeSpaceSyncDelegated?: boolean;
   fusionEnabled?: boolean;
   markersEnabled?: boolean;
   markerSampler?: MarkerImageSamplerPort;
@@ -97,6 +101,13 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   private readonly calibrationEnabled: boolean;
   private readonly avatarEnabled: boolean;
   private readonly frameSyncEnabled: boolean;
+  /**
+   * Whether the optical time path has been handed to time-space-sync.
+   *
+   * While this is on nothing here builds a decoder or an overlay: the two would
+   * lease the same camera and cover the screen twice, and neither says so.
+   */
+  private readonly timeSpaceSyncDelegated: boolean;
   private readonly fusionEnabled: boolean;
   private readonly markersEnabled: boolean;
   private readonly errorCorrectionLevel: QrErrorCorrectionLevel;
@@ -138,6 +149,10 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   };
 
   public constructor(options: MultiviewPoseExtensionOptions = {}) {
+    // Before anything is built. A combination that would run two
+    // implementations of one path has to stop here, while there is still
+    // somewhere to put the reason.
+    requireConsistentFeatureFlags();
     this.enabled = options.enabled ?? featureFlags.qrCourierPairing;
     this.poseEnabled =
       options.poseEnabled ?? featureFlags.webgpuMoveNetMultiPose;
@@ -148,6 +163,8 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     this.avatarEnabled = options.avatarEnabled ?? featureFlags.avatarRetargetV1;
     this.frameSyncEnabled =
       options.frameSyncEnabled ?? featureFlags.frameSyncPatternV1;
+    this.timeSpaceSyncDelegated =
+      options.timeSpaceSyncDelegated ?? featureFlags.timeSpaceSyncDelegateV1;
     this.fusionEnabled = options.fusionEnabled ?? featureFlags.poseFusion3D;
     this.markersEnabled =
       options.markersEnabled ?? featureFlags.glowStickMarkers;
@@ -620,11 +637,18 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   }
 
   private requireFrameSyncEnabled(): void {
-    if (!this.frameSyncEnabled) {
+    if (this.frameSyncEnabled) return;
+    if (this.timeSpaceSyncDelegated) {
+      // Two different reasons for the same silence. An operator who delegated
+      // on purpose needs to hear that the path moved, not that a flag they did
+      // not set is off.
       throw new Error(
-        "Frame sync pattern v1 is disabled. Enable it before the project starts.",
+        "The optical time path has been handed to turbowarp-time-space-sync. Use its blocks, or turn timeSpaceSyncDelegateV1 off and frameSyncPatternV1 on to keep using this one.",
       );
     }
+    throw new Error(
+      "Frame sync pattern v1 is disabled. Enable it before the project starts.",
+    );
   }
 
   private requireFrameSyncDisplay(): PatternDisplayPort {
