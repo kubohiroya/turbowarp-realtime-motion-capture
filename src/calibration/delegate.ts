@@ -68,7 +68,7 @@ export class CalibrationProfileDelegate {
         CameraProfileCapability | undefined);
     if (typeof candidate !== "object" || candidate === null) {
       throw new Error(
-        "Camera Source is not loaded, or its calibration profile feature is off. Load it and turn on calibrationProfilesV1, or turn off cameraCalibrationDelegateV1 here.",
+        "Camera Source is not loaded. Load it, or turn off cameraCalibrationDelegateV1 here and use this extension's own calibration path.",
       );
     }
     const missing = MEMBERS.filter(
