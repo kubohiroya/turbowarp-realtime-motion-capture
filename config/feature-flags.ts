@@ -13,6 +13,14 @@ export interface MultiviewPoseFeatureFlags {
    * legitimate.
    */
   readonly timeSpaceSyncDelegateV1: boolean;
+  /**
+   * Keep calibration profiles in Camera Source's shared registry.
+   *
+   * Only the profile half. Running a calibration stays here until
+   * turbowarp-camera-calibration publishes a way for another extension to ask
+   * it to.
+   */
+  readonly cameraCalibrationDelegateV1: boolean;
   readonly poseFusion3D: boolean;
   readonly glowStickMarkers: boolean;
 }
@@ -35,7 +43,10 @@ const overrides = (globalThis as FeatureFlagGlobal).__TWMP_FEATURE_FLAGS__;
  */
 const exclusivePairs: ReadonlyArray<
   readonly [keyof MultiviewPoseFeatureFlags, keyof MultiviewPoseFeatureFlags]
-> = [["frameSyncPatternV1", "timeSpaceSyncDelegateV1"]];
+> = [
+  ["frameSyncPatternV1", "timeSpaceSyncDelegateV1"],
+  ["cameraCalibrationV1", "cameraCalibrationDelegateV1"],
+];
 
 /**
  * Refuses a combination that would run two implementations of one thing.
@@ -66,6 +77,7 @@ export const featureFlags: MultiviewPoseFeatureFlags = Object.freeze({
   avatarRetargetV1: overrides?.avatarRetargetV1 === true,
   frameSyncPatternV1: overrides?.frameSyncPatternV1 === true,
   timeSpaceSyncDelegateV1: overrides?.timeSpaceSyncDelegateV1 === true,
+  cameraCalibrationDelegateV1: overrides?.cameraCalibrationDelegateV1 === true,
   poseFusion3D: overrides?.poseFusion3D === true,
   glowStickMarkers: overrides?.glowStickMarkers === true,
 });

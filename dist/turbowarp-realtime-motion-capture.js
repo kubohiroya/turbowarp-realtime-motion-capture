@@ -1001,7 +1001,7 @@
   * doubled correction is a plausible number -- so the combination is refused
   * before anything starts rather than diagnosed afterwards.
   */
-  var exclusivePairs = [["frameSyncPatternV1", "timeSpaceSyncDelegateV1"]];
+  var exclusivePairs = [["frameSyncPatternV1", "timeSpaceSyncDelegateV1"], ["cameraCalibrationV1", "cameraCalibrationDelegateV1"]];
   /**
   * Refuses a combination that would run two implementations of one thing.
   *
@@ -1022,6 +1022,7 @@
   	avatarRetargetV1: overrides?.avatarRetargetV1 === true,
   	frameSyncPatternV1: overrides?.frameSyncPatternV1 === true,
   	timeSpaceSyncDelegateV1: overrides?.timeSpaceSyncDelegateV1 === true,
+  	cameraCalibrationDelegateV1: overrides?.cameraCalibrationDelegateV1 === true,
   	poseFusion3D: overrides?.poseFusion3D === true,
   	glowStickMarkers: overrides?.glowStickMarkers === true
   });
@@ -80656,6 +80657,101 @@
   	}
   };
   //#endregion
+  //#region src/calibration/delegate.ts
+  var REQUIRED_VERSION = 1;
+  var MEMBERS = [
+  	"requireVersion",
+  	"registerProfile",
+  	"profileFor",
+  	"calibratedCameras"
+  ];
+  var CalibrationProfileDelegate = class {
+  	constructor(options) {
+  		this.lastError = "";
+  		this.lastErrorDetail = "";
+  		this.cameraId = "";
+  		this.runtime = options.runtime;
+  		this.injected = options.capability;
+  	}
+  	capability() {
+  		const candidate = this.injected ?? this.runtime["kubohiroyaCameraSourceCapability"];
+  		if (typeof candidate !== "object" || candidate === null) throw new Error("Camera Source is not loaded, or its calibration profile feature is off. Load it and turn on calibrationProfilesV1, or turn off cameraCalibrationDelegateV1 here.");
+  		const missing = MEMBERS.filter((name) => typeof candidate[name] !== "function");
+  		if (missing.length > 0) throw new Error(`Camera Source does not publish the calibration profile API: ${missing.join(", ")} missing.`);
+  		return candidate.requireVersion(REQUIRED_VERSION);
+  	}
+  	/**
+  	* Hands a profile document to the shared registry.
+  	*
+  	* Both the old `twrmc/camera-calibration` documents and the current
+  	* `twcs/camera-intrinsics` ones go in at the same entry, because Camera Source
+  	* dispatches on what the document says it is. An operator holding a file they
+  	* saved once should not have to know which of two schemas it uses.
+  	*/
+  	importProfile(text) {
+  		let document;
+  		try {
+  			document = JSON.parse(text);
+  		} catch {
+  			this.lastError = "invalid-json";
+  			this.lastErrorDetail = "The calibration profile is not valid JSON.";
+  			return;
+  		}
+  		const result = this.capability().registerProfile(document);
+  		if (result.ok) {
+  			this.cameraId = result.profile?.cameraId ?? this.cameraId;
+  			this.lastError = "";
+  			this.lastErrorDetail = "";
+  			return;
+  		}
+  		this.lastError = result.error?.code ?? "invalid-profile";
+  		this.lastErrorDetail = result.error ? `${result.error.path}: ${result.error.message}` : "The calibration profile was refused.";
+  	}
+  	/**
+  	* Whether a document would be accepted, without storing it.
+  	*
+  	* The registry stores nothing when validation fails, so asking is the same as
+  	* trying; a profile that half-registered would be indistinguishable from a
+  	* good one at the point of use.
+  	*/
+  	validateProfile(text) {
+  		let document;
+  		try {
+  			document = JSON.parse(text);
+  		} catch {
+  			return false;
+  		}
+  		return this.capability().registerProfile(document).ok;
+  	}
+  	ready() {
+  		const capability = this.quietCapability();
+  		if (!capability) return false;
+  		return this.cameraId ? capability.profileFor(this.cameraId) !== void 0 : capability.calibratedCameras().length > 0;
+  	}
+  	profileJson() {
+  		const capability = this.quietCapability();
+  		if (!capability) return "";
+  		const cameraId = this.cameraId || (capability.calibratedCameras()[0] ?? "");
+  		if (!cameraId) return "";
+  		const profile = capability.profileFor(cameraId);
+  		return profile === void 0 ? "" : JSON.stringify(profile);
+  	}
+  	errorCode() {
+  		return this.lastError;
+  	}
+  	errorDetail() {
+  		return this.lastErrorDetail;
+  	}
+  	/** The capability if it is there, without raising when it is not. */
+  	quietCapability() {
+  		try {
+  			return this.capability();
+  		} catch {
+  			return;
+  		}
+  	}
+  };
+  //#endregion
   //#region src/frame-sync/pattern-display.ts
   var REFRESH_SAMPLES = 30;
   var MINIMUM_REFRESH_US = 4e3;
@@ -82372,6 +82468,7 @@
   		this.avatarEnabled = options.avatarEnabled ?? featureFlags.avatarRetargetV1;
   		this.frameSyncEnabled = options.frameSyncEnabled ?? featureFlags.frameSyncPatternV1;
   		this.timeSpaceSyncDelegated = options.timeSpaceSyncDelegated ?? featureFlags.timeSpaceSyncDelegateV1;
+  		this.calibrationDelegated = options.calibrationDelegated ?? featureFlags.cameraCalibrationDelegateV1;
   		this.fusionEnabled = options.fusionEnabled ?? featureFlags.poseFusion3D;
   		this.markersEnabled = options.markersEnabled ?? featureFlags.glowStickMarkers;
   		this.errorCorrectionLevel = options.errorCorrectionLevel ?? qrConfig.errorCorrectionLevel;
@@ -82575,14 +82672,20 @@
   		await this.calibration.cleanup();
   	}
   	async importCameraCalibration(args) {
+  		if (this.calibrationDelegated) {
+  			this.requireCalibrationDelegate().importProfile(Scratch.Cast.toString(args.JSON));
+  			return;
+  		}
   		this.requireCalibrationEnabled();
   		await this.calibration.importProfile(Scratch.Cast.toString(args.JSON));
   	}
   	cameraCalibrationJsonValid(args) {
+  		if (this.calibrationDelegated) return this.requireCalibrationDelegate().validateProfile(Scratch.Cast.toString(args.JSON));
   		this.requireCalibrationEnabled();
   		return this.calibration.validateProfile(Scratch.Cast.toString(args.JSON));
   	}
   	cameraCalibrationReady() {
+  		if (this.calibrationDelegated) return this.requireCalibrationDelegate().ready();
   		return this.calibrationEnabled && this.calibration.ready();
   	}
   	cameraCalibrationState() {
@@ -82607,6 +82710,7 @@
   		return this.calibration.errorMessage();
   	}
   	cameraCalibrationJson() {
+  		if (this.calibrationDelegated) return this.requireCalibrationDelegate().profileJson();
   		return this.calibration.profileJson();
   	}
   	registerAvatarAsset(args) {
@@ -82743,6 +82847,18 @@
   		if (!this.timeSpaceSyncDelegated) throw new Error("The optical time path has not been delegated. Turn on timeSpaceSyncDelegateV1 before the project starts.");
   		if (!this.frameSyncDelegate) this.frameSyncDelegate = new FrameSyncDelegate({ runtime: this.runtime });
   		return this.frameSyncDelegate;
+  	}
+  	/**
+  	* The profile adapter, built once the registry has been handed over.
+  	*
+  	* Never built otherwise: the flags forbid both paths at once, and a second
+  	* store of the same profiles is what makes two extensions disagree about a
+  	* camera.
+  	*/
+  	requireCalibrationDelegate() {
+  		if (!this.calibrationDelegated) throw new Error("Calibration profiles have not been delegated. Turn on cameraCalibrationDelegateV1 before the project starts.");
+  		if (!this.calibrationDelegate) this.calibrationDelegate = new CalibrationProfileDelegate({ runtime: this.runtime });
+  		return this.calibrationDelegate;
   	}
   	requireFrameSyncEnabled() {
   		if (this.frameSyncEnabled) return;
@@ -82897,7 +83013,7 @@
   		if (feature === "qrCourierPairing") return this.enabled;
   		if (feature === "webgpuMoveNetMultiPose") return this.poseEnabled;
   		if (feature === "protocolV1Codec") return this.protocolEnabled;
-  		if (feature === "cameraCalibrationV1") return this.calibrationEnabled;
+  		if (feature === "cameraCalibrationV1") return this.calibrationEnabled || this.calibrationDelegated;
   		if (feature === "avatarRetargetV1") return this.avatarEnabled;
   		if (feature === "frameSyncPatternV1") return this.frameSyncEnabled || this.timeSpaceSyncDelegated;
   		if (feature === "timeSpaceSyncDelegateV1") return this.timeSpaceSyncDelegated;
