@@ -749,15 +749,30 @@ describe("handing the optical time path away", () => {
     ).not.toThrow();
   });
 
-  it("says the path moved rather than that a flag is off", () => {
+  it("sends an old opcode to the other extension rather than to the path here", () => {
     setup();
     const extension = new MultiviewPoseExtension({
       frameSyncEnabled: false,
       timeSpaceSyncDelegated: true,
     });
-    expect(() => extension.showFrameSyncPattern()).toThrowError(
-      /handed to turbowarp-time-space-sync/,
-    );
+    // The local path would have said the flag is off. These messages can only
+    // come from the adapter, so the opcode went there.
+    expect(() => extension.showFrameSyncPattern()).toThrowError(/acknowledge/);
+    expect(
+      extension.startFrameSyncDecoder({ CAMERA_ID: "left", SECONDS: 8 }),
+    ).rejects.toThrow(/turbowarp-time-space-sync is not loaded/);
+  });
+
+  it("keeps the old opcodes in the palette while the path is delegated", () => {
+    setup();
+    const info = new MultiviewPoseExtension({
+      frameSyncEnabled: false,
+      timeSpaceSyncDelegated: true,
+    }).getInfo() as { blocks: Array<{ opcode: string }> };
+    const opcodes = info.blocks.map((block) => block.opcode);
+    // They are what an existing project calls, and answering them is the point.
+    expect(opcodes).toContain("startFrameSyncDecoder");
+    expect(opcodes).toContain("acknowledgeFrameSyncFlashing");
   });
 
   it("still says the flag is off when nothing was delegated", () => {

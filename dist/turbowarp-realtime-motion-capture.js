@@ -715,6 +715,25 @@
   			"arguments": {}
   		},
   		{
+  			"opcode": "acknowledgeFrameSyncFlashing",
+  			"feature": "timeSpaceSyncDelegateV1",
+  			"blockType": "COMMAND",
+  			"text": "acknowledge that the frame sync pattern flashes",
+  			"description": "Records that the operator was warned the full screen pattern flashes. Time Space Sync will not show it otherwise. The older blocks asked for nothing here because the path they drove asked for nothing; a project that delegates accepts this extra step.",
+  			"arguments": {}
+  		},
+  		{
+  			"opcode": "setFrameSyncDisplayRefresh",
+  			"feature": "timeSpaceSyncDelegateV1",
+  			"blockType": "COMMAND",
+  			"text": "set frame sync display refresh to [REFRESH_US] us",
+  			"description": "Tells the decoder how long each code stays on screen. Only needed when the pattern is shown from another computer; when it is shown from this one the display has measured it. It sets the whole width of the constraint an observation carries, so assuming 60 Hz for a projector running at 50 biases every result with nothing saying so.",
+  			"arguments": { "REFRESH_US": {
+  				"type": "NUMBER",
+  				"defaultValue": 16667
+  			} }
+  		},
+  		{
   			"opcode": "startPoseFusion",
   			"feature": "poseFusion3D",
   			"blockType": "COMMAND",
@@ -80422,6 +80441,221 @@
   	return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
   //#endregion
+  //#region node_modules/.pnpm/@kubohiroya+turbowarp-time-space-sync@0.1.0/node_modules/@kubohiroya/turbowarp-time-space-sync/lib/contracts/errors.js
+  var LEGACY_BY_CODE = {
+  	"": "",
+  	"invalid-duration": "invalid-duration",
+  	"camera-unavailable": "camera-unavailable",
+  	"camera-ended": "camera-ended",
+  	"panel-not-found": "panel-not-found",
+  	"low-contrast": "low-contrast",
+  	"decode-unstable": "decode-unstable",
+  	"ambiguous-panel": "panel-not-found",
+  	"stale-levels": "decode-unstable",
+  	"frame-size-mismatch": "panel-not-found",
+  	"capture-time-unavailable": "decode-unstable",
+  	"exposure-too-long": "decode-unstable",
+  	"clock-domain-mismatch": "camera-unavailable",
+  	"clock-epoch-changed": "camera-unavailable",
+  	"intrinsic-profile-mismatch": "camera-unavailable",
+  	"unsupported-distortion-model": "camera-unavailable",
+  	"webrtc-contract-mismatch": "camera-unavailable",
+  	"reference-unknown": "camera-unavailable",
+  	"degenerate-view": "camera-unavailable",
+  	"insufficient-points": "camera-unavailable",
+  	"verification-failed": "camera-unavailable",
+  	"photosensitivity-unacknowledged": "camera-unavailable",
+  	"display-unavailable": "camera-unavailable",
+  	"invalid-payload": "camera-unavailable"
+  };
+  /** Narrows a code to the vocabulary an old frame-sync opcode understands. */
+  function toLegacyFrameSyncErrorCode(code) {
+  	return LEGACY_BY_CODE[code];
+  }
+  //#endregion
+  //#region node_modules/.pnpm/@kubohiroya+turbowarp-time-space-sync@0.1.0/node_modules/@kubohiroya/turbowarp-time-space-sync/lib/runtime-capability.js
+  var runtimeCapabilityKey = "kubohiroyaTimeSpaceSyncCapability";
+  //#endregion
+  //#region node_modules/.pnpm/@kubohiroya+turbowarp-time-space-sync@0.1.0/node_modules/@kubohiroya/turbowarp-time-space-sync/lib/runtime.js
+  /**
+  * Narrows a runtime value to this extension's capability.
+  *
+  * Returns undefined when the extension is absent or its feature is off, so a
+  * consumer writes the same check once rather than each time. A version it does
+  * not implement is a refusal from `requireVersion`, not an absence: the
+  * extension is there and cannot do what was asked, which is a different thing
+  * from it not being loaded and calls for a different message.
+  */
+  function readTimeSpaceSyncCapability(runtime) {
+  	if (typeof runtime !== "object" || runtime === null) return void 0;
+  	const candidate = runtime[runtimeCapabilityKey];
+  	if (typeof candidate !== "object" || candidate === null) return void 0;
+  	const { requireVersion } = candidate;
+  	return typeof requireVersion === "function" ? candidate : void 0;
+  }
+  //#endregion
+  //#region src/frame-sync/delegate.ts
+  /**
+  * The reference the old opcodes stand for.
+  *
+  * They were written when one display was the only thing a decoder could be
+  * pointed at, so they carry no reference of their own. Naming it here keeps the
+  * observations these produce distinguishable from any raised through the new
+  * blocks against a reference the operator chose.
+  */
+  var LEGACY_REFERENCE_ID = "legacy-frame-sync";
+  var FrameSyncDelegate = class {
+  	constructor(options) {
+  		this.cameraId = "";
+  		this.runtime = options.runtime;
+  		this.injected = options.capability;
+  	}
+  	/**
+  	* The capability, at the version this adapter was written against.
+  	*
+  	* A missing extension and a version this build cannot speak are different
+  	* failures with different remedies, so they carry different messages. Neither
+  	* falls back to the path here: the flags forbid that path being built at all
+  	* while this one is in use, and quietly running it would be the double
+  	* capture the flags exist to prevent.
+  	*/
+  	capability() {
+  		const capability = this.injected ?? readTimeSpaceSyncCapability(this.runtime);
+  		if (!capability) throw new Error("turbowarp-time-space-sync is not loaded, or its optical time feature is off. Load it and turn on opticalTimeSyncV1, or turn off timeSpaceSyncDelegateV1 here.");
+  		return capability.requireVersion(1);
+  	}
+  	/**
+  	* Records that the operator was warned the pattern flashes.
+  	*
+  	* The old opcode had nothing to say about this, because the path it drove
+  	* asked for nothing. The new one will not show the pattern without it, and
+  	* manufacturing an acknowledgement here so that an old block keeps working
+  	* would defeat the only thing standing between an operator and a full screen
+  	* of flashing. Projects that opt into delegation accept this extra step.
+  	*/
+  	acknowledgeFlashing(nowUs) {
+  		this.acknowledgement = {
+  			acknowledgedByOperator: true,
+  			acknowledgedAtUs: nowUs
+  		};
+  	}
+  	showPattern() {
+  		const acknowledgement = this.acknowledgement;
+  		if (!acknowledgement) throw new Error("The full screen pattern flashes and has to be acknowledged before it is shown. Run `acknowledge that the frame sync pattern flashes` first.");
+  		this.capability().showPattern(acknowledgement);
+  	}
+  	hidePattern() {
+  		this.capability().hidePattern();
+  	}
+  	patternShown() {
+  		return this.injectedOrAbsent()?.patternShown() ?? false;
+  	}
+  	patternWrapUs() {
+  		const profile = this.injectedOrAbsent()?.patternProfile();
+  		return profile ? 2 ** profile.dataBits * profile.stepUs : 0;
+  	}
+  	/**
+  	* Tells the decoder how long each code stays on screen.
+  	*
+  	* The old opcode never asked, because the decoder it drove guessed. Guessing
+  	* is what the new path refuses to do: the interval sets the whole width of
+  	* the constraint an observation carries, so assuming 60 Hz for a projector
+  	* running at 50 biases every result with nothing in the output saying so.
+  	* When the pattern is being shown from this machine the display has measured
+  	* it and that figure is used; otherwise it has to be supplied.
+  	*/
+  	setDisplayRefreshUs(microseconds) {
+  		this.displayRefreshUs = Number.isFinite(microseconds) && microseconds > 0 ? Math.round(microseconds) : void 0;
+  	}
+  	async start(cameraId, calibrationSeconds) {
+  		const capability = this.capability();
+  		const refreshUs = capability.patternRefreshUs() ?? this.displayRefreshUs;
+  		if (refreshUs === void 0) throw new Error("The display's refresh interval is not known. Show the pattern from this computer, or run `set frame sync display refresh` with the interval of the computer showing it.");
+  		this.cameraId = cameraId;
+  		await capability.startDecoder({
+  			cameraId,
+  			referenceId: LEGACY_REFERENCE_ID,
+  			calibrationSeconds,
+  			displayRefreshUs: refreshUs,
+  			refreshUncertaintyUs: this.patternStepUs()
+  		});
+  	}
+  	/**
+  	* Runs calibration again, by starting the decoder over.
+  	*
+  	* The capability has no separate recalibrate: the new path treats a fresh
+  	* calibration as a fresh run. The observable difference is that the camera
+  	* lease is released and taken again, where the old opcode kept it. A camera
+  	* shared with something else sees a gap it did not see before.
+  	*/
+  	async recalibrate(calibrationSeconds) {
+  		if (!this.cameraId) throw new Error("Start the frame sync decoder before calibrating it again.");
+  		await this.start(this.cameraId, calibrationSeconds);
+  	}
+  	async stop() {
+  		this.observation = void 0;
+  		this.pending = void 0;
+  		await this.injectedOrAbsent()?.stopDecoder();
+  	}
+  	state() {
+  		return this.injectedOrAbsent()?.decoderState() ?? "idle";
+  	}
+  	/**
+  	* The last error, in the six codes the old opcodes published.
+  	*
+  	* A project reads this against a literal, so a code it has never seen reads
+  	* to it as "no error I know about". The mapping table comes from
+  	* time-space-sync, which owns both vocabularies.
+  	*/
+  	errorCode() {
+  		return toLegacyFrameSyncErrorCode(this.injectedOrAbsent()?.decoderError() ?? "");
+  	}
+  	observationAvailable() {
+  		if (this.pending === void 0) this.pending = this.injectedOrAbsent()?.takeObservation();
+  		return this.pending !== void 0;
+  	}
+  	takeObservation() {
+  		const held = this.pending;
+  		this.pending = void 0;
+  		this.observation = held ?? this.capability().takeObservation();
+  	}
+  	/** When this computer finished recording the taken frame. */
+  	frameTimestampUs() {
+  		return this.observation?.deliveredAtUs ?? 0;
+  	}
+  	/**
+  	* How old the taken frame was when the browser delivered it.
+  	*
+  	* Zero when the browser reported no capture time, which is what the old
+  	* opcode did and what projects reading it expect. It is not a measurement of
+  	* no latency, and the new path says so properly; this one cannot, because
+  	* there is nowhere in the old surface to say it.
+  	*/
+  	frameAgeUs() {
+  		const observation = this.observation;
+  		if (!observation || observation.captureTimeUs === void 0) return 0;
+  		return Math.max(0, observation.deliveredAtUs - observation.captureTimeUs);
+  	}
+  	/** The display time decoded out of the taken frame, within the wrap window. */
+  	patternTimestampUs() {
+  		return this.observation?.patternCodeTimestampUs ?? 0;
+  	}
+  	activeCameraId() {
+  		return this.cameraId;
+  	}
+  	/** The capability if it is there, without raising when it is not. */
+  	injectedOrAbsent() {
+  		try {
+  			return this.capability();
+  		} catch {
+  			return;
+  		}
+  	}
+  	patternStepUs() {
+  		return this.injectedOrAbsent()?.patternProfile().stepUs ?? 1e3;
+  	}
+  };
+  //#endregion
   //#region src/frame-sync/pattern-display.ts
   var REFRESH_SAMPLES = 30;
   var MINIMUM_REFRESH_US = 4e3;
@@ -82406,21 +82640,41 @@
   	avatarRetargetError() {
   		return this.avatar.error();
   	}
+  	acknowledgeFrameSyncFlashing() {
+  		this.requireDelegate().acknowledgeFlashing(Date.now() * 1e3);
+  	}
+  	setFrameSyncDisplayRefresh(args) {
+  		this.requireDelegate().setDisplayRefreshUs(Scratch.Cast.toNumber(args.REFRESH_US));
+  	}
   	showFrameSyncPattern() {
+  		if (this.timeSpaceSyncDelegated) {
+  			this.requireDelegate().showPattern();
+  			return;
+  		}
   		this.requireFrameSyncEnabled();
   		this.requireFrameSyncDisplay().show();
   	}
   	hideFrameSyncPattern() {
+  		if (this.timeSpaceSyncDelegated) {
+  			this.requireDelegate().hidePattern();
+  			return;
+  		}
   		this.requireFrameSyncEnabled();
   		this.frameSyncOverlay?.hide();
   	}
   	frameSyncPatternShown() {
+  		if (this.timeSpaceSyncDelegated) return this.requireDelegate().patternShown();
   		return this.frameSyncOverlay?.visible() ?? false;
   	}
   	frameSyncPatternWrapUs() {
+  		if (this.timeSpaceSyncDelegated) return this.requireDelegate().patternWrapUs();
   		return PATTERN_WRAP_US;
   	}
   	async startFrameSyncDecoder(args) {
+  		if (this.timeSpaceSyncDelegated) {
+  			await this.requireDelegate().start(Scratch.Cast.toString(args.CAMERA_ID), Scratch.Cast.toNumber(args.SECONDS));
+  			return;
+  		}
   		this.requireFrameSyncEnabled();
   		await this.requireFrameSyncController().start({
   			cameraId: Scratch.Cast.toString(args.CAMERA_ID),
@@ -82428,40 +82682,70 @@
   		});
   	}
   	async calibrateFrameSyncDecoder(args) {
+  		if (this.timeSpaceSyncDelegated) {
+  			await this.requireDelegate().recalibrate(Scratch.Cast.toNumber(args.SECONDS));
+  			return;
+  		}
   		this.requireFrameSyncEnabled();
   		await this.requireFrameSyncController().recalibrate(Scratch.Cast.toNumber(args.SECONDS));
   	}
   	async stopFrameSyncDecoder() {
+  		if (this.timeSpaceSyncDelegated) {
+  			await this.requireDelegate().stop();
+  			return;
+  		}
   		await this.frameSync?.stop();
   	}
   	frameSyncDecoderState() {
+  		if (this.timeSpaceSyncDelegated) return this.requireDelegate().state();
   		return this.frameSync?.state() ?? "idle";
   	}
   	frameSyncDecoderError() {
+  		if (this.timeSpaceSyncDelegated) return this.requireDelegate().errorCode();
   		return this.frameSync?.errorCode() ?? "";
   	}
   	frameSyncDecodeRate() {
+  		if (this.timeSpaceSyncDelegated) return 0;
   		return this.frameSync?.decodeRate() ?? 0;
   	}
   	frameSyncObservationAvailable() {
+  		if (this.timeSpaceSyncDelegated) return this.requireDelegate().observationAvailable();
   		return (this.frameSync?.pendingObservations() ?? 0) > 0;
   	}
   	takeFrameSyncObservation() {
+  		if (this.timeSpaceSyncDelegated) {
+  			this.requireDelegate().takeObservation();
+  			return;
+  		}
   		this.requireFrameSyncEnabled();
   		this.requireFrameSyncController().takeObservation();
   	}
   	frameSyncFrameTimestampUs() {
+  		if (this.timeSpaceSyncDelegated) return this.requireDelegate().frameTimestampUs();
   		return this.frameSync?.currentObservation()?.frameTimestampUs ?? 0;
   	}
   	frameSyncFrameAgeUs() {
+  		if (this.timeSpaceSyncDelegated) return this.requireDelegate().frameAgeUs();
   		return this.frameSync?.currentObservation()?.frameAgeUs ?? 0;
   	}
   	frameSyncPatternTimestampUs() {
+  		if (this.timeSpaceSyncDelegated) return this.requireDelegate().patternTimestampUs();
   		return this.frameSync?.currentObservation()?.patternTimestampUs ?? 0;
+  	}
+  	/**
+  	* The adapter, built once the path has actually been handed over.
+  	*
+  	* Never built otherwise: the flags forbid both paths at once, and an adapter
+  	* sitting ready beside a running local decoder is the second half of the
+  	* double capture they exist to prevent.
+  	*/
+  	requireDelegate() {
+  		if (!this.timeSpaceSyncDelegated) throw new Error("The optical time path has not been delegated. Turn on timeSpaceSyncDelegateV1 before the project starts.");
+  		if (!this.frameSyncDelegate) this.frameSyncDelegate = new FrameSyncDelegate({ runtime: this.runtime });
+  		return this.frameSyncDelegate;
   	}
   	requireFrameSyncEnabled() {
   		if (this.frameSyncEnabled) return;
-  		if (this.timeSpaceSyncDelegated) throw new Error("The optical time path has been handed to turbowarp-time-space-sync. Use its blocks, or turn timeSpaceSyncDelegateV1 off and frameSyncPatternV1 on to keep using this one.");
   		throw new Error("Frame sync pattern v1 is disabled. Enable it before the project starts.");
   	}
   	requireFrameSyncDisplay() {
@@ -82615,7 +82899,8 @@
   		if (feature === "protocolV1Codec") return this.protocolEnabled;
   		if (feature === "cameraCalibrationV1") return this.calibrationEnabled;
   		if (feature === "avatarRetargetV1") return this.avatarEnabled;
-  		if (feature === "frameSyncPatternV1") return this.frameSyncEnabled;
+  		if (feature === "frameSyncPatternV1") return this.frameSyncEnabled || this.timeSpaceSyncDelegated;
+  		if (feature === "timeSpaceSyncDelegateV1") return this.timeSpaceSyncDelegated;
   		if (feature === "poseFusion3D") return this.fusionEnabled;
   		return this.markersEnabled;
   	}

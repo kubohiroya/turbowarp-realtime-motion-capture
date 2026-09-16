@@ -3,6 +3,11 @@
   "id": "kubohiroyarealtimemotioncapture",
   "blocks": [
     {
+      "opcode": "acknowledgeFrameSyncFlashing",
+      "blockType": "COMMAND",
+      "arguments": []
+    },
+    {
       "opcode": "addCameraCalibrationSample",
       "blockType": "COMMAND",
       "arguments": []
@@ -499,6 +504,16 @@
       "opcode": "resetAvatarRetarget",
       "blockType": "COMMAND",
       "arguments": []
+    },
+    {
+      "opcode": "setFrameSyncDisplayRefresh",
+      "blockType": "COMMAND",
+      "arguments": [
+        {
+          "id": "REFRESH_US",
+          "type": "NUMBER"
+        }
+      ]
     },
     {
       "opcode": "setPerformerGlowStick",

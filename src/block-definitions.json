@@ -7,7 +7,12 @@
       "blockType": "COMMAND",
       "text": "prepare offer QR for peer [PEER]",
       "description": "Creates a WebRTC offer and prepares one or more QR courier parts.",
-      "arguments": { "PEER": { "type": "STRING", "defaultValue": "camera-1" } }
+      "arguments": {
+        "PEER": {
+          "type": "STRING",
+          "defaultValue": "camera-1"
+        }
+      }
     },
     {
       "opcode": "showOfferQrPart",
@@ -15,7 +20,12 @@
       "blockType": "COMMAND",
       "text": "show offer QR part [INDEX] on this sprite",
       "description": "Shows the selected one-based offer QR part using a temporary sprite skin.",
-      "arguments": { "INDEX": { "type": "NUMBER", "defaultValue": 1 } }
+      "arguments": {
+        "INDEX": {
+          "type": "NUMBER",
+          "defaultValue": 1
+        }
+      }
     },
     {
       "opcode": "offerQrPartCount",
@@ -47,7 +57,12 @@
       "blockType": "COMMAND",
       "text": "show offer QR for peer [PEER] on this sprite",
       "description": "Creates an offer and shows its first QR courier part on this sprite.",
-      "arguments": { "PEER": { "type": "STRING", "defaultValue": "camera-1" } }
+      "arguments": {
+        "PEER": {
+          "type": "STRING",
+          "defaultValue": "camera-1"
+        }
+      }
     },
     {
       "opcode": "endOfferQrDisplay",
@@ -80,9 +95,18 @@
       "text": "start WebGPU MoveNet MultiPose camera [CAMERA_ID] peer [PEER_ID] calibration [CALIBRATION_ID]",
       "description": "Loads MoveNet MultiPose Lightning on WebGPU and leases a named Camera Source camera.",
       "arguments": {
-        "CAMERA_ID": { "type": "STRING", "defaultValue": "pose" },
-        "PEER_ID": { "type": "STRING", "defaultValue": "source-1" },
-        "CALIBRATION_ID": { "type": "STRING", "defaultValue": "uncalibrated" }
+        "CAMERA_ID": {
+          "type": "STRING",
+          "defaultValue": "pose"
+        },
+        "PEER_ID": {
+          "type": "STRING",
+          "defaultValue": "source-1"
+        },
+        "CALIBRATION_ID": {
+          "type": "STRING",
+          "defaultValue": "uncalibrated"
+        }
       }
     },
     {
@@ -100,7 +124,10 @@
       "text": "infer latest pose frame timestamp [CAPTURE_TIMESTAMP_US] us",
       "description": "Runs at most one inference and carries an opaque synchronized timestamp supplied by the external time service.",
       "arguments": {
-        "CAPTURE_TIMESTAMP_US": { "type": "NUMBER", "defaultValue": 0 }
+        "CAPTURE_TIMESTAMP_US": {
+          "type": "NUMBER",
+          "defaultValue": 0
+        }
       }
     },
     {
@@ -158,7 +185,10 @@
       "text": "protocol JSON [JSON] valid?",
       "description": "Validates and dispatches one of the five pinned multiview-pose v1 contracts without retaining it.",
       "arguments": {
-        "JSON": { "type": "STRING", "defaultValue": "{}" }
+        "JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
       }
     },
     {
@@ -168,7 +198,10 @@
       "text": "decode protocol JSON [JSON]",
       "description": "Parses, validates, and retains a supported v1 protocol value for later reporters.",
       "arguments": {
-        "JSON": { "type": "STRING", "defaultValue": "{}" }
+        "JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
       }
     },
     {
@@ -178,7 +211,10 @@
       "text": "encode protocol JSON [JSON]",
       "description": "Validates a supported v1 value and returns its compact JSON encoding.",
       "arguments": {
-        "JSON": { "type": "STRING", "defaultValue": "{}" }
+        "JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
       }
     },
     {
@@ -228,12 +264,30 @@
       "text": "start camera calibration camera [CAMERA_ID] profile [CALIBRATION_ID] board [COLUMNS] by [ROWS] square [SQUARE_METERS] m max error [MAX_ERROR_PX] px",
       "description": "Leases a named Camera Source video and fixes its real resolution for a chessboard calibration session.",
       "arguments": {
-        "CAMERA_ID": { "type": "STRING", "defaultValue": "pose" },
-        "CALIBRATION_ID": { "type": "STRING", "defaultValue": "calibration-1" },
-        "COLUMNS": { "type": "NUMBER", "defaultValue": 9 },
-        "ROWS": { "type": "NUMBER", "defaultValue": 6 },
-        "SQUARE_METERS": { "type": "NUMBER", "defaultValue": 0.025 },
-        "MAX_ERROR_PX": { "type": "NUMBER", "defaultValue": 1.5 }
+        "CAMERA_ID": {
+          "type": "STRING",
+          "defaultValue": "pose"
+        },
+        "CALIBRATION_ID": {
+          "type": "STRING",
+          "defaultValue": "calibration-1"
+        },
+        "COLUMNS": {
+          "type": "NUMBER",
+          "defaultValue": 9
+        },
+        "ROWS": {
+          "type": "NUMBER",
+          "defaultValue": 6
+        },
+        "SQUARE_METERS": {
+          "type": "NUMBER",
+          "defaultValue": 0.025
+        },
+        "MAX_ERROR_PX": {
+          "type": "NUMBER",
+          "defaultValue": 1.5
+        }
       }
     },
     {
@@ -275,7 +329,10 @@
       "text": "import CameraCalibration v1 [JSON]",
       "description": "Imports an exact CameraCalibration v1 JSON profile after schema and credential-boundary validation.",
       "arguments": {
-        "JSON": { "type": "STRING", "defaultValue": "{}" }
+        "JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
       }
     },
     {
@@ -285,7 +342,10 @@
       "text": "CameraCalibration v1 [JSON] valid?",
       "description": "Validates a calibration profile without replacing the last validated profile.",
       "arguments": {
-        "JSON": { "type": "STRING", "defaultValue": "{}" }
+        "JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
       }
     },
     {
@@ -367,7 +427,10 @@
       "text": "register avatar asset [ASSET_ID] template JSON [TEMPLATE_JSON] rig JSON [RIG_JSON]",
       "description": "Registers an A-Frame 0.3.0 template and its Kalidokit rig-output selector mapping.",
       "arguments": {
-        "ASSET_ID": { "type": "STRING", "defaultValue": "actor" },
+        "ASSET_ID": {
+          "type": "STRING",
+          "defaultValue": "actor"
+        },
         "TEMPLATE_JSON": {
           "type": "STRING",
           "defaultValue": "{\"type\":\"group\",\"children\":[]}"
@@ -385,11 +448,26 @@
       "text": "bind person [PERSON_ID] to avatar [INSTANCE_ID] asset [ASSET_ID] under [PARENT] confidence [CONFIDENCE]",
       "description": "Creates an avatar instance and binds one PoseFrame3D person ID to it.",
       "arguments": {
-        "PERSON_ID": { "type": "STRING", "defaultValue": "performer-1" },
-        "INSTANCE_ID": { "type": "STRING", "defaultValue": "avatar-1" },
-        "ASSET_ID": { "type": "STRING", "defaultValue": "actor" },
-        "PARENT": { "type": "STRING", "defaultValue": "#scene" },
-        "CONFIDENCE": { "type": "NUMBER", "defaultValue": 0.3 }
+        "PERSON_ID": {
+          "type": "STRING",
+          "defaultValue": "performer-1"
+        },
+        "INSTANCE_ID": {
+          "type": "STRING",
+          "defaultValue": "avatar-1"
+        },
+        "ASSET_ID": {
+          "type": "STRING",
+          "defaultValue": "actor"
+        },
+        "PARENT": {
+          "type": "STRING",
+          "defaultValue": "#scene"
+        },
+        "CONFIDENCE": {
+          "type": "NUMBER",
+          "defaultValue": 0.3
+        }
       }
     },
     {
@@ -399,7 +477,10 @@
       "text": "unbind avatar for person [PERSON_ID]",
       "description": "Emits recognition end, removes the created avatar instance, and clears its binding.",
       "arguments": {
-        "PERSON_ID": { "type": "STRING", "defaultValue": "performer-1" }
+        "PERSON_ID": {
+          "type": "STRING",
+          "defaultValue": "performer-1"
+        }
       }
     },
     {
@@ -409,8 +490,14 @@
       "text": "apply PoseFrame3D [POSE3D_JSON] with PoseFrame2D [POSE2D_JSON] to avatars",
       "description": "Adapts corresponding exact v1 frames to BlazePose-33, solves only with Kalidokit, and applies up to six rigs.",
       "arguments": {
-        "POSE3D_JSON": { "type": "STRING", "defaultValue": "{}" },
-        "POSE2D_JSON": { "type": "STRING", "defaultValue": "{}" }
+        "POSE3D_JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        },
+        "POSE2D_JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
       }
     },
     {
@@ -492,8 +579,14 @@
       "text": "start frame sync decoder for camera [CAMERA_ID] calibrating for [SECONDS] seconds",
       "description": "Leases the camera, locates the projected pattern, learns its light and dark levels, and reports failure when readings do not decode often enough. The window must be at least 6.2 seconds so that every pattern cell changes at least once.",
       "arguments": {
-        "CAMERA_ID": { "type": "STRING", "defaultValue": "camera-1" },
-        "SECONDS": { "type": "NUMBER", "defaultValue": 8 }
+        "CAMERA_ID": {
+          "type": "STRING",
+          "defaultValue": "camera-1"
+        },
+        "SECONDS": {
+          "type": "NUMBER",
+          "defaultValue": 8
+        }
       }
     },
     {
@@ -503,7 +596,10 @@
       "text": "calibrate frame sync decoder for [SECONDS] seconds",
       "description": "Runs calibration again on the running decoder, for example after the camera or the projector moved. The window must be at least 6.2 seconds so that every pattern cell changes at least once.",
       "arguments": {
-        "SECONDS": { "type": "NUMBER", "defaultValue": 8 }
+        "SECONDS": {
+          "type": "NUMBER",
+          "defaultValue": 8
+        }
       }
     },
     {
@@ -579,15 +675,45 @@
       "arguments": {}
     },
     {
+      "opcode": "acknowledgeFrameSyncFlashing",
+      "feature": "timeSpaceSyncDelegateV1",
+      "blockType": "COMMAND",
+      "text": "acknowledge that the frame sync pattern flashes",
+      "description": "Records that the operator was warned the full screen pattern flashes. Time Space Sync will not show it otherwise. The older blocks asked for nothing here because the path they drove asked for nothing; a project that delegates accepts this extra step.",
+      "arguments": {}
+    },
+    {
+      "opcode": "setFrameSyncDisplayRefresh",
+      "feature": "timeSpaceSyncDelegateV1",
+      "blockType": "COMMAND",
+      "text": "set frame sync display refresh to [REFRESH_US] us",
+      "description": "Tells the decoder how long each code stays on screen. Only needed when the pattern is shown from another computer; when it is shown from this one the display has measured it. It sets the whole width of the constraint an observation carries, so assuming 60 Hz for a projector running at 50 biases every result with nothing saying so.",
+      "arguments": {
+        "REFRESH_US": {
+          "type": "NUMBER",
+          "defaultValue": 16667
+        }
+      }
+    },
+    {
       "opcode": "startPoseFusion",
       "feature": "poseFusion3D",
       "blockType": "COMMAND",
       "text": "start pose fusion delay [DELAY_MS] ms jitter [JITTER_MS] ms min keypoint score [MIN_SCORE]",
       "description": "Starts the multi-camera jitter buffer that fuses one past instant behind the newest frame.",
       "arguments": {
-        "DELAY_MS": { "type": "NUMBER", "defaultValue": 120 },
-        "JITTER_MS": { "type": "NUMBER", "defaultValue": 80 },
-        "MIN_SCORE": { "type": "NUMBER", "defaultValue": 0.3 }
+        "DELAY_MS": {
+          "type": "NUMBER",
+          "defaultValue": 120
+        },
+        "JITTER_MS": {
+          "type": "NUMBER",
+          "defaultValue": 80
+        },
+        "MIN_SCORE": {
+          "type": "NUMBER",
+          "defaultValue": 0.3
+        }
       }
     },
     {
@@ -612,7 +738,12 @@
       "blockType": "COMMAND",
       "text": "load fusion camera calibration [JSON]",
       "description": "Loads one CameraCalibration v1 profile and derives its world-to-camera projection.",
-      "arguments": { "JSON": { "type": "STRING", "defaultValue": "{}" } }
+      "arguments": {
+        "JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
+      }
     },
     {
       "opcode": "bufferPoseFrame2D",
@@ -620,7 +751,12 @@
       "blockType": "COMMAND",
       "text": "buffer PoseFrame2D JSON [JSON]",
       "description": "Validates one PoseFrame2D v1 and inserts it into its camera ring buffer in timestamp order.",
-      "arguments": { "JSON": { "type": "STRING", "defaultValue": "{}" } }
+      "arguments": {
+        "JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
+      }
     },
     {
       "opcode": "fuseBufferedPoseFrame3D",
@@ -636,7 +772,12 @@
       "blockType": "COMMAND",
       "text": "fuse PoseFrame3D at timestamp [TIMESTAMP_US] us",
       "description": "Fuses one explicit past instant expressed in the synchronized microsecond time base.",
-      "arguments": { "TIMESTAMP_US": { "type": "NUMBER", "defaultValue": 0 } }
+      "arguments": {
+        "TIMESTAMP_US": {
+          "type": "NUMBER",
+          "defaultValue": 0
+        }
+      }
     },
     {
       "opcode": "latestPoseFrame3D",
@@ -769,7 +910,12 @@
       "blockType": "COMMAND",
       "text": "load glow stick palette from PerformanceDSL [JSON]",
       "description": "Loads the performer colors from a Performance DSL v1 payload for fusion identity.",
-      "arguments": { "JSON": { "type": "STRING", "defaultValue": "{}" } }
+      "arguments": {
+        "JSON": {
+          "type": "STRING",
+          "defaultValue": "{}"
+        }
+      }
     },
     {
       "opcode": "setPerformerGlowStick",
@@ -778,8 +924,14 @@
       "text": "set performer [PERFORMER_ID] glow stick at [KEYPOINT]",
       "description": "Chooses which COCO-17 keypoint one performer carries the glow stick at.",
       "arguments": {
-        "PERFORMER_ID": { "type": "STRING", "defaultValue": "actor-1" },
-        "KEYPOINT": { "type": "STRING", "defaultValue": "right_wrist" }
+        "PERFORMER_ID": {
+          "type": "STRING",
+          "defaultValue": "actor-1"
+        },
+        "KEYPOINT": {
+          "type": "STRING",
+          "defaultValue": "right_wrist"
+        }
       }
     },
     {
