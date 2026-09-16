@@ -59,6 +59,7 @@
     "check:dist": "pnpm run build && node scripts/check-dist.ts"
   },
   "dependencies": {
+    "@kubohiroya/turbowarp-camera-source": "0.7.0",
     "@kubohiroya/turbowarp-time-space-sync": "0.1.0",
     "@sinclair/typebox": "0.34.52",
     "@techstark/opencv-js": "4.12.0-release.1",
