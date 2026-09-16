@@ -23,6 +23,7 @@ import { AvatarRetargetController } from "./avatar/controller.js";
 import type { AvatarPoseSolverPort } from "./avatar/types.js";
 import { FrameSyncPatternController } from "./frame-sync/controller.js";
 import { FrameSyncDelegate } from "./frame-sync/delegate.js";
+import { CalibrationProfileDelegate } from "./calibration/delegate.js";
 import { FrameSyncPatternDisplay } from "./frame-sync/pattern-display.js";
 import { PATTERN_WRAP_US } from "./frame-sync/pattern.js";
 import { requireSynchronizedTimeSource } from "./frame-sync/time-source.js";
@@ -79,6 +80,7 @@ export interface MultiviewPoseExtensionOptions {
   avatarEnabled?: boolean;
   frameSyncEnabled?: boolean;
   timeSpaceSyncDelegated?: boolean;
+  calibrationDelegated?: boolean;
   fusionEnabled?: boolean;
   markersEnabled?: boolean;
   markerSampler?: MarkerImageSamplerPort;
@@ -110,6 +112,14 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
    * lease the same camera and cover the screen twice, and neither says so.
    */
   private readonly timeSpaceSyncDelegated: boolean;
+  /**
+   * Whether calibration profiles are kept in Camera Source's registry.
+   *
+   * Running a calibration is not delegated: the extension that owns the
+   * procedure publishes no way to be asked. So this turns over storage,
+   * validation and reading, and the backend here still drives a session.
+   */
+  private readonly calibrationDelegated: boolean;
   private readonly fusionEnabled: boolean;
   private readonly markersEnabled: boolean;
   private readonly errorCorrectionLevel: QrErrorCorrectionLevel;
@@ -121,6 +131,7 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   private readonly avatar: AvatarRetargetController;
   private frameSync: FrameSyncPatternController | undefined;
   private frameSyncDelegate: FrameSyncDelegate | undefined;
+  private calibrationDelegate: CalibrationProfileDelegate | undefined;
   private frameSyncOverlay: PatternDisplayPort | undefined;
   private readonly fusion: PoseFusionController;
   private session: OfferQrSession | undefined;
@@ -168,6 +179,8 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
       options.frameSyncEnabled ?? featureFlags.frameSyncPatternV1;
     this.timeSpaceSyncDelegated =
       options.timeSpaceSyncDelegated ?? featureFlags.timeSpaceSyncDelegateV1;
+    this.calibrationDelegated =
+      options.calibrationDelegated ?? featureFlags.cameraCalibrationDelegateV1;
     this.fusionEnabled = options.fusionEnabled ?? featureFlags.poseFusion3D;
     this.markersEnabled =
       options.markersEnabled ?? featureFlags.glowStickMarkers;
@@ -453,16 +466,29 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   }
 
   public async importCameraCalibration(args: { JSON: unknown }): Promise<void> {
+    if (this.calibrationDelegated) {
+      this.requireCalibrationDelegate().importProfile(
+        Scratch.Cast.toString(args.JSON),
+      );
+      return;
+    }
     this.requireCalibrationEnabled();
     await this.calibration.importProfile(Scratch.Cast.toString(args.JSON));
   }
 
   public cameraCalibrationJsonValid(args: { JSON: unknown }): boolean {
+    if (this.calibrationDelegated) {
+      return this.requireCalibrationDelegate().validateProfile(
+        Scratch.Cast.toString(args.JSON),
+      );
+    }
     this.requireCalibrationEnabled();
     return this.calibration.validateProfile(Scratch.Cast.toString(args.JSON));
   }
 
   public cameraCalibrationReady(): boolean {
+    if (this.calibrationDelegated)
+      return this.requireCalibrationDelegate().ready();
     return this.calibrationEnabled && this.calibration.ready();
   }
 
@@ -495,6 +521,8 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   }
 
   public cameraCalibrationJson(): string {
+    if (this.calibrationDelegated)
+      return this.requireCalibrationDelegate().profileJson();
     return this.calibration.profileJson();
   }
 
@@ -710,6 +738,27 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
       this.frameSyncDelegate = new FrameSyncDelegate({ runtime: this.runtime });
     }
     return this.frameSyncDelegate;
+  }
+
+  /**
+   * The profile adapter, built once the registry has been handed over.
+   *
+   * Never built otherwise: the flags forbid both paths at once, and a second
+   * store of the same profiles is what makes two extensions disagree about a
+   * camera.
+   */
+  private requireCalibrationDelegate(): CalibrationProfileDelegate {
+    if (!this.calibrationDelegated) {
+      throw new Error(
+        "Calibration profiles have not been delegated. Turn on cameraCalibrationDelegateV1 before the project starts.",
+      );
+    }
+    if (!this.calibrationDelegate) {
+      this.calibrationDelegate = new CalibrationProfileDelegate({
+        runtime: this.runtime,
+      });
+    }
+    return this.calibrationDelegate;
   }
 
   private requireFrameSyncEnabled(): void {
@@ -958,7 +1007,11 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     if (feature === "qrCourierPairing") return this.enabled;
     if (feature === "webgpuMoveNetMultiPose") return this.poseEnabled;
     if (feature === "protocolV1Codec") return this.protocolEnabled;
-    if (feature === "cameraCalibrationV1") return this.calibrationEnabled;
+    // The old opcodes stay in the palette while profiles are delegated: they
+    // are what an existing project calls.
+    if (feature === "cameraCalibrationV1") {
+      return this.calibrationEnabled || this.calibrationDelegated;
+    }
     if (feature === "avatarRetargetV1") return this.avatarEnabled;
     // The old opcodes stay in the palette while the path is delegated: they
     // are what an existing project calls, and answering them is the point of

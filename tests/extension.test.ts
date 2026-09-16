@@ -705,6 +705,7 @@ const allFlagsOff: MultiviewPoseFeatureFlags = {
   avatarRetargetV1: false,
   frameSyncPatternV1: false,
   timeSpaceSyncDelegateV1: false,
+  cameraCalibrationDelegateV1: false,
   poseFusion3D: false,
   glowStickMarkers: false,
 };
@@ -747,6 +748,17 @@ describe("handing the optical time path away", () => {
         timeSpaceSyncDelegateV1: true,
       }),
     ).not.toThrow();
+  });
+
+  it("refuses to keep two stores of the same calibration profiles", () => {
+    // Two stores are what make two extensions disagree about one camera.
+    expect(() =>
+      requireConsistentFeatureFlags({
+        ...allFlagsOff,
+        cameraCalibrationV1: true,
+        cameraCalibrationDelegateV1: true,
+      }),
+    ).toThrowError(/lease the same camera twice|cameraCalibrationDelegateV1/);
   });
 
   it("sends an old opcode to the other extension rather than to the path here", () => {
