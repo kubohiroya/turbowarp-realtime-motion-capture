@@ -118,6 +118,13 @@ PoseFrame2D `captureTimestampUs` and PoseFrame3D `timestampUs` are opaque values
 synchronized local time service. This extension carries the supplied timestamp unchanged and does
 not implement clock initialization, offset estimation, probes, ping, or pong logic.
 
+Several cameras on one page (the standalone app) need no synchronization service: their frames share
+the page clock. There the timestamp comes from Camera Source 0.13.0, which reports the capture time of
+the frame a frame source was taken at (`frameTime`, from `requestVideoFrameCallback`). The per-camera
+pose blocks carry that value unchanged, and skip a camera whose current frame was already inferred.
+Nothing under `src/pose` reads a clock; the inference duration reported for measurement is taken
+through an injected function and never enters a frame. `scripts/check-repo.ts` enforces this.
+
 ## Camera calibration workflow
 
 `cameraCalibrationV1` is startup-fixed and default OFF. A session validates the camera and

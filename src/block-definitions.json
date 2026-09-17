@@ -179,6 +179,87 @@
       "arguments": {}
     },
     {
+      "opcode": "startPoseCamera",
+      "feature": "webgpuMoveNetMultiPose",
+      "blockType": "COMMAND",
+      "text": "start pose estimation on camera [CAMERA_ID] peer [PEER_ID] calibration [CALIBRATION_ID]",
+      "description": "Starts a separate MoveNet MultiPose pipeline for one named Camera Source camera, beside any others. Each camera has its own detector so tracking IDs never cross views; all of them run on the same WebGPU device.",
+      "arguments": {
+        "CAMERA_ID": {
+          "type": "STRING",
+          "defaultValue": "cam-1"
+        },
+        "PEER_ID": {
+          "type": "STRING",
+          "defaultValue": "local"
+        },
+        "CALIBRATION_ID": {
+          "type": "STRING",
+          "defaultValue": "uncalibrated"
+        }
+      }
+    },
+    {
+      "opcode": "inferPoseCameraAtFrameTime",
+      "feature": "webgpuMoveNetMultiPose",
+      "blockType": "COMMAND",
+      "text": "infer pose on camera [CAMERA_ID] at its frame time",
+      "description": "Infers the frame the camera is showing and stamps it with that frame's capture time from requestVideoFrameCallback (captureTime, or presentationTime where the browser has none), in microseconds since the Unix epoch on the page clock. A frame already inferred is skipped.",
+      "arguments": {
+        "CAMERA_ID": {
+          "type": "STRING",
+          "defaultValue": "cam-1"
+        }
+      }
+    },
+    {
+      "opcode": "stopPoseCamera",
+      "feature": "webgpuMoveNetMultiPose",
+      "blockType": "COMMAND",
+      "text": "stop pose estimation on camera [CAMERA_ID]",
+      "description": "Stops one camera's pipeline and releases its detector and camera lease.",
+      "arguments": {
+        "CAMERA_ID": {
+          "type": "STRING",
+          "defaultValue": "cam-1"
+        }
+      }
+    },
+    {
+      "opcode": "stopAllPoseCameras",
+      "feature": "webgpuMoveNetMultiPose",
+      "blockType": "COMMAND",
+      "text": "stop pose estimation on all cameras",
+      "description": "Stops every per-camera pipeline.",
+      "arguments": {}
+    },
+    {
+      "opcode": "poseCameraFrame2D",
+      "feature": "webgpuMoveNetMultiPose",
+      "blockType": "REPORTER",
+      "text": "latest PoseFrame2D JSON of camera [CAMERA_ID]",
+      "description": "Returns the camera's latest COCO-17 pose frame as JSON, or an empty string before its first inference.",
+      "arguments": {
+        "CAMERA_ID": {
+          "type": "STRING",
+          "defaultValue": "cam-1"
+        }
+      }
+    },
+    {
+      "opcode": "poseCameraStatusJson",
+      "feature": "webgpuMoveNetMultiPose",
+      "blockType": "REPORTER",
+      "text": "pose status JSON of camera [CAMERA_ID]",
+      "description": "Returns the camera pipeline's state, error, inference and skipped-frame counts, last inference duration in milliseconds, frame time source (capture or presentation), latest capture timestamp and person count as JSON, or an empty string when it is not started.",
+      "arguments": {
+        "CAMERA_ID": {
+          "type": "STRING",
+          "defaultValue": "cam-1"
+        }
+      }
+    },
+    {
       "opcode": "protocolJsonValid",
       "feature": "protocolV1Codec",
       "blockType": "BOOLEAN",

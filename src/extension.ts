@@ -13,6 +13,7 @@ import { createQrSvg } from "./qr-svg.js";
 import { TemporarySpriteSkinManager } from "./sprite-skin.js";
 import { requireWebRtcOfferCapability } from "./webrtc-capability.js";
 import { PosePipelineController } from "./pose/controller.js";
+import { PoseCameraSet } from "./pose/camera-set.js";
 import { TfjsWebGpuMoveNet } from "./pose/tfjs-movenet.js";
 import type { PoseModelPort } from "./pose/types.js";
 import { ProtocolV1Codec } from "./protocol/codec.js";
@@ -74,6 +75,8 @@ interface OfferQrSession {
 
 export interface MultiviewPoseExtensionOptions {
   enabled?: boolean;
+  /** Monotonic milliseconds, for measuring inference durations. */
+  measureMs?: () => number;
   poseEnabled?: boolean;
   protocolEnabled?: boolean;
   calibrationEnabled?: boolean;
@@ -126,6 +129,7 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   private readonly runtime: TurboWarpRuntime;
   private readonly skins: TemporarySpriteSkinManager;
   private readonly pose: PosePipelineController;
+  private readonly poseCameras: PoseCameraSet;
   private readonly protocol: ProtocolV1Codec;
   private readonly calibration: CameraCalibrationController;
   private readonly avatar: AvatarRetargetController;
@@ -146,6 +150,7 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   private readonly runStopListener = () => {
     this.endOfferQrDisplay();
     void this.pose.stop();
+    void this.poseCameras.stopAll();
     void this.calibration.cancel();
     this.avatar.reset();
     void this.frameSync?.stop();
@@ -188,9 +193,16 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
       options.errorCorrectionLevel ?? qrConfig.errorCorrectionLevel;
     this.runtime = options.runtime ?? Scratch.vm?.runtime ?? {};
     this.skins = new TemporarySpriteSkinManager(this.runtime);
+    const poseModel = options.poseModel ?? new TfjsWebGpuMoveNet();
+    this.poseCameras = new PoseCameraSet({
+      runtime: this.runtime,
+      model: poseModel,
+      // Durations for the operator; never a timestamp carried in a frame.
+      measureMs: options.measureMs ?? (() => performance.now()),
+    });
     this.pose = new PosePipelineController({
       runtime: this.runtime,
-      model: options.poseModel ?? new TfjsWebGpuMoveNet(),
+      model: poseModel,
       markerSampler:
         options.markerSampler ??
         new CanvasGlowStickSampler(DEFAULT_MARKER_SAMPLING_OPTIONS),
@@ -389,6 +401,49 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
 
   public latestPoseFrame2D(): string {
     return this.pose.latestFrameJson();
+  }
+
+  public async startPoseCamera(args: {
+    CAMERA_ID: unknown;
+    PEER_ID: unknown;
+    CALIBRATION_ID: unknown;
+  }): Promise<void> {
+    this.requirePoseEnabled();
+    await this.poseCameras.start({
+      cameraId: Scratch.Cast.toString(args.CAMERA_ID).trim(),
+      peerId: Scratch.Cast.toString(args.PEER_ID).trim(),
+      calibrationId: Scratch.Cast.toString(args.CALIBRATION_ID).trim(),
+    });
+  }
+
+  public async inferPoseCameraAtFrameTime(args: {
+    CAMERA_ID: unknown;
+  }): Promise<void> {
+    this.requirePoseEnabled();
+    await this.poseCameras.infer(Scratch.Cast.toString(args.CAMERA_ID));
+  }
+
+  public async stopPoseCamera(args: { CAMERA_ID: unknown }): Promise<void> {
+    await this.poseCameras.stop(Scratch.Cast.toString(args.CAMERA_ID));
+  }
+
+  public async stopAllPoseCameras(): Promise<void> {
+    await this.poseCameras.stopAll();
+  }
+
+  public poseCameraFrame2D(args: { CAMERA_ID: unknown }): string {
+    if (!this.poseEnabled) return "";
+    return this.poseCameras.latestFrameJson(
+      Scratch.Cast.toString(args.CAMERA_ID),
+    );
+  }
+
+  public poseCameraStatusJson(args: { CAMERA_ID: unknown }): string {
+    if (!this.poseEnabled) return "";
+    const status = this.poseCameras.status(
+      Scratch.Cast.toString(args.CAMERA_ID),
+    );
+    return status ? JSON.stringify(status) : "";
   }
 
   public protocolJsonValid(args: { JSON: unknown }): boolean {
@@ -935,6 +990,7 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   public dispose(): void {
     this.endOfferQrDisplay();
     void this.pose.stop();
+    void this.poseCameras.stopAll();
     void this.calibration.cancel();
     this.avatar.reset();
     void this.frameSync?.stop();

@@ -84,6 +84,13 @@ PoseFrame2Dの`captureTimestampUs`とPoseFrame3Dの`timestampUs`は、別実装�
 time serviceから受け取る不透明値です。この機能拡張はclock同期、offset推定、probe、ping、
 pongを実装せず、受け取ったtimestampを変更せずprotocolへ格納します。
 
+1つのページで複数のカメラを使う場合（スタンドアロン版アプリ）は、フレームがページの時計を共有するので、
+同期サービスは要りません。このときtimestampはCamera Source 0.13.0から受け取ります。Camera Sourceは、
+frame sourceを取得した時点で表示されていたフレームの撮影時刻（`frameTime`、`requestVideoFrameCallback`
+による）を報告します。カメラごとの姿勢推定ブロックはその値を変更せずに運び、推論済みのフレームしか
+ないカメラは飛ばします。`src/pose`は時計を読みません。計測用に報告する推論時間は注入された関数で測り、
+フレームには入れません。`scripts/check-repo.ts`がこれを検査します。
+
 ## camera calibration workflow
 
 `cameraCalibrationV1`は起動時固定・既定OFFです。camera／calibration ID、inner cornerが縦横

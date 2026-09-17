@@ -1,4 +1,4 @@
-import { access, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import {
@@ -417,12 +417,20 @@ async function checkProtocolOwnership() {
   ) {
     errors.push("PoseFrame2D must not contain clockId");
   }
-  if (
-    /performance\.(?:timeOrigin|now)|clockId|clock-probe/u.test(poseController)
-  ) {
-    errors.push(
-      "Pose inference must carry external timestamps without implementing a clock",
-    );
+  // Timestamps in pose frames come from outside: the synchronized time service,
+  // or Camera Source's capture time for a frame. Nothing under src/pose reads a
+  // clock; an inference duration is measured through an injected function.
+  for (const name of await readdir("src/pose")) {
+    const source = await readFile(`src/pose/${name}`, "utf8");
+    if (
+      /performance\.(?:timeOrigin|now)|Date\.now|requestVideoFrameCallback|clockId|clock-probe/u.test(
+        source,
+      )
+    ) {
+      errors.push(
+        `src/pose/${name} must carry external timestamps without implementing a clock`,
+      );
+    }
   }
 
   // This package owns the application contracts. Nothing here may treat the
