@@ -2,7 +2,7 @@
 
 [User guide](../README.md) | [日本語](turbowarp-extension-api.ja.md) | [Architecture](architecture.md)
 
-This is the public API reference for `@kubohiroya/turbowarp-realtime-motion-capture` 0.2.1.
+This is the public API reference for `@kubohiroya/turbowarp-realtime-motion-capture` 0.3.0.
 The supported integration surface is the unsandboxed TurboWarp extension: its extension ID,
 opcodes, arguments, reporters, JSON contracts, and runtime capabilities. The TypeScript classes
 under `src/` are implementation details and are not package exports.
@@ -312,6 +312,67 @@ Returns the latest protocol-v1 COCO-17 pose frame as JSON, or an empty string be
 |---|---|
 | Type | Reporter |
 | Opcode | `latestPoseFrame2D` |
+
+### `start pose estimation on camera [CAMERA_ID] peer [PEER_ID] calibration [CALIBRATION_ID]`
+
+Starts a separate MoveNet MultiPose pipeline for one named Camera Source camera, beside any others. Each camera has its own detector so tracking IDs never cross views; all of them run on the same WebGPU device.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `startPoseCamera` |
+| `CAMERA_ID` | String, default: `cam-1` |
+| `PEER_ID` | String, default: `local` |
+| `CALIBRATION_ID` | String, default: `uncalibrated` |
+
+### `infer pose on camera [CAMERA_ID] at its frame time`
+
+Infers the frame the camera is showing and stamps it with that frame's capture time from requestVideoFrameCallback (captureTime, or presentationTime where the browser has none), in microseconds since the Unix epoch on the page clock. A frame already inferred is skipped.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `inferPoseCameraAtFrameTime` |
+| `CAMERA_ID` | String, default: `cam-1` |
+
+### `stop pose estimation on camera [CAMERA_ID]`
+
+Stops one camera's pipeline and releases its detector and camera lease.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `stopPoseCamera` |
+| `CAMERA_ID` | String, default: `cam-1` |
+
+### `stop pose estimation on all cameras`
+
+Stops every per-camera pipeline.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `stopAllPoseCameras` |
+
+### `latest PoseFrame2D JSON of camera [CAMERA_ID]`
+
+Returns the camera's latest COCO-17 pose frame as JSON, or an empty string before its first inference.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `poseCameraFrame2D` |
+| `CAMERA_ID` | String, default: `cam-1` |
+
+### `pose status JSON of camera [CAMERA_ID]`
+
+Returns the camera pipeline's state, error, inference and skipped-frame counts, last inference duration in milliseconds, frame time source (capture or presentation), latest capture timestamp and person count as JSON, or an empty string when it is not started.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `poseCameraStatusJson` |
+| `CAMERA_ID` | String, default: `cam-1` |
 
 ### `protocol JSON [JSON] valid?`
 

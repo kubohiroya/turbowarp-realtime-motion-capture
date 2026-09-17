@@ -1,6 +1,8 @@
 import { createPoseFrame2D } from "./pose-frame.js";
 import type {
   CameraFrameSourcePort,
+  CameraFrameTimePort,
+  FrameTimeSource,
   CameraLeasePort,
   CameraSourcePort,
   Coco17KeypointId,
@@ -49,6 +51,35 @@ export interface PosePipelineControllerOptions {
   runtime: TurboWarpRuntime;
   model: PoseModelPort;
   markerSampler?: MarkerImageSamplerPort;
+  /**
+   * Monotonic milliseconds, used only to measure how long an inference took.
+   * The value never enters a frame: timestamps come from outside.
+   */
+  measureMs?: () => number;
+}
+
+/**
+ * - `inferred`: a frame was produced.
+ * - `no-new-frame`: the camera has presented nothing since the frame inferred
+ *   last, so there was nothing new to infer.
+ * - `no-frame-time`: Camera Source reports no capture time for the frame, so
+ *   there is no timestamp to carry.
+ */
+export type FrameTimedInferenceOutcome =
+  "inferred" | "no-new-frame" | "no-frame-time";
+
+/** What a camera's pipeline has done, for measuring it. */
+export interface PosePipelineStats {
+  readonly state: PosePipelineState;
+  readonly errorCode: PosePipelineErrorCode;
+  readonly inferences: number;
+  readonly skippedFrames: number;
+  /** Duration of the last inference, in milliseconds. */
+  readonly lastInferenceMs: number;
+  readonly frameTimeSource: FrameTimeSource | "";
+  /** Capture timestamp of the latest frame produced, or 0. */
+  readonly captureTimestampUs: number;
+  readonly persons: number;
 }
 
 export class PosePipelineController {
@@ -63,6 +94,12 @@ export class PosePipelineController {
   private sequence = 0;
   private latestFrame: PoseFrame2D | undefined;
   private readonly markerSampler: MarkerImageSamplerPort | undefined;
+  private readonly measureMs: (() => number) | undefined;
+  private inferredPresentedFrames: number | undefined;
+  private inferences = 0;
+  private skippedFrames = 0;
+  private lastInferenceMs = 0;
+  private lastFrameTimeSource: FrameTimeSource | "" = "";
   private markerOptions: MarkerSamplingOptions | undefined;
   private pipelineState: PosePipelineState = "idle";
   private pipelineErrorCode: PosePipelineErrorCode = "";
@@ -72,6 +109,7 @@ export class PosePipelineController {
     this.runtime = options.runtime;
     this.model = options.model;
     this.markerSampler = options.markerSampler;
+    this.measureMs = options.measureMs;
   }
 
   /**
@@ -136,6 +174,67 @@ export class PosePipelineController {
     return inference;
   }
 
+  /**
+   * Infers the frame the camera is showing and carries the capture time Camera
+   * Source reports for it, instead of a timestamp supplied by the project.
+   *
+   * For cameras on one page, whose frame times share the page clock. A frame
+   * already inferred is not inferred again: with several cameras taking turns
+   * on one GPU, a camera that has not delivered a new frame gives its turn away.
+   */
+  public async inferAtFrameTime(): Promise<FrameTimedInferenceOutcome> {
+    if (this.inference) {
+      await this.inference;
+      return "inferred";
+    }
+    if (!this.detector || !this.lease || !this.startOptions) {
+      throw new Error("WebGPU MoveNet MultiPose is not ready.");
+    }
+    let time: CameraFrameTimePort | undefined;
+    try {
+      time = this.lease.getFrameSource().frameTime;
+    } catch (error) {
+      this.fail("camera-ended", error);
+    }
+    if (time === undefined) return "no-frame-time";
+    if (time.presentedFrames === this.inferredPresentedFrames) {
+      this.skippedFrames += 1;
+      return "no-new-frame";
+    }
+    this.inferredPresentedFrames = time.presentedFrames;
+    await this.inferTimed(time);
+    return "inferred";
+  }
+
+  public stats(): PosePipelineStats {
+    return {
+      state: this.pipelineState,
+      errorCode: this.pipelineErrorCode,
+      inferences: this.inferences,
+      skippedFrames: this.skippedFrames,
+      lastInferenceMs: this.lastInferenceMs,
+      frameTimeSource: this.lastFrameTimeSource,
+      captureTimestampUs: this.latestFrame?.captureTimestampUs ?? 0,
+      persons: this.latestFrame?.persons.length ?? 0,
+    };
+  }
+
+  private inferTimed(time: CameraFrameTimePort): Promise<void> {
+    const operation = this.operation;
+    const inference = this.runInference(operation, time.timestampUs).then(
+      () => {
+        if (operation === this.operation)
+          this.lastFrameTimeSource = time.source;
+      },
+    );
+    this.inference = inference;
+    const clear = () => {
+      if (this.inference === inference) this.inference = undefined;
+    };
+    void inference.then(clear, clear);
+    return inference;
+  }
+
   public async stop(): Promise<void> {
     this.operation += 1;
     if (
@@ -159,6 +258,11 @@ export class PosePipelineController {
     await lease?.release();
     this.latestFrame = undefined;
     this.sequence = 0;
+    this.inferredPresentedFrames = undefined;
+    this.inferences = 0;
+    this.skippedFrames = 0;
+    this.lastInferenceMs = 0;
+    this.lastFrameTimeSource = "";
     this.pipelineState = "idle";
     this.clearError();
   }
@@ -262,6 +366,7 @@ export class PosePipelineController {
       this.fail("camera-ended", error);
     }
     let poses;
+    const started = this.measureMs?.();
     try {
       poses = await detector.estimatePoses(frame.element, {
         maxPoses: 6,
@@ -271,6 +376,9 @@ export class PosePipelineController {
       this.fail("inference-failed", error);
     }
     if (operation !== this.operation) return;
+    const finished = this.measureMs?.();
+    this.lastInferenceMs =
+      started === undefined || finished === undefined ? 0 : finished - started;
     let markersByPose: Map<number, PoseMarkerV2[]> | undefined;
     try {
       markersByPose = this.sampleMarkers(poses, frame);
@@ -292,6 +400,7 @@ export class PosePipelineController {
         markersByPose,
       );
       this.sequence += 1;
+      this.inferences += 1;
       this.pipelineState = "ready";
       this.clearError();
     } catch (error) {

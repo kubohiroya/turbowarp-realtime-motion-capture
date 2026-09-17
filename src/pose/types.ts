@@ -94,6 +94,18 @@ export interface PoseModelPort {
   createMultiPoseDetector(): Promise<PoseDetectorPort>;
 }
 
+export type FrameTimeSource = "capture" | "presentation";
+
+/**
+ * The capture time Camera Source (0.13.0 and later) reports for the frame a
+ * source was taken at, in microseconds since the Unix epoch on the page clock.
+ */
+export interface CameraFrameTimePort {
+  readonly timestampUs: number;
+  readonly source: FrameTimeSource;
+  readonly presentedFrames: number;
+}
+
 export interface CameraFrameSourcePort {
   readonly kind: "video";
   readonly element: HTMLVideoElement;
@@ -101,6 +113,8 @@ export interface CameraFrameSourcePort {
   readonly height: number;
   readonly mirrored: boolean;
   readonly deviceId: string;
+  /** Absent before Camera Source 0.13.0, and while a frame has no time. */
+  readonly frameTime?: CameraFrameTimePort;
 }
 
 export interface CameraLeasePort {

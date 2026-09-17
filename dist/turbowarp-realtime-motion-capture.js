@@ -233,6 +233,79 @@
   			"arguments": {}
   		},
   		{
+  			"opcode": "startPoseCamera",
+  			"feature": "webgpuMoveNetMultiPose",
+  			"blockType": "COMMAND",
+  			"text": "start pose estimation on camera [CAMERA_ID] peer [PEER_ID] calibration [CALIBRATION_ID]",
+  			"description": "Starts a separate MoveNet MultiPose pipeline for one named Camera Source camera, beside any others. Each camera has its own detector so tracking IDs never cross views; all of them run on the same WebGPU device.",
+  			"arguments": {
+  				"CAMERA_ID": {
+  					"type": "STRING",
+  					"defaultValue": "cam-1"
+  				},
+  				"PEER_ID": {
+  					"type": "STRING",
+  					"defaultValue": "local"
+  				},
+  				"CALIBRATION_ID": {
+  					"type": "STRING",
+  					"defaultValue": "uncalibrated"
+  				}
+  			}
+  		},
+  		{
+  			"opcode": "inferPoseCameraAtFrameTime",
+  			"feature": "webgpuMoveNetMultiPose",
+  			"blockType": "COMMAND",
+  			"text": "infer pose on camera [CAMERA_ID] at its frame time",
+  			"description": "Infers the frame the camera is showing and stamps it with that frame's capture time from requestVideoFrameCallback (captureTime, or presentationTime where the browser has none), in microseconds since the Unix epoch on the page clock. A frame already inferred is skipped.",
+  			"arguments": { "CAMERA_ID": {
+  				"type": "STRING",
+  				"defaultValue": "cam-1"
+  			} }
+  		},
+  		{
+  			"opcode": "stopPoseCamera",
+  			"feature": "webgpuMoveNetMultiPose",
+  			"blockType": "COMMAND",
+  			"text": "stop pose estimation on camera [CAMERA_ID]",
+  			"description": "Stops one camera's pipeline and releases its detector and camera lease.",
+  			"arguments": { "CAMERA_ID": {
+  				"type": "STRING",
+  				"defaultValue": "cam-1"
+  			} }
+  		},
+  		{
+  			"opcode": "stopAllPoseCameras",
+  			"feature": "webgpuMoveNetMultiPose",
+  			"blockType": "COMMAND",
+  			"text": "stop pose estimation on all cameras",
+  			"description": "Stops every per-camera pipeline.",
+  			"arguments": {}
+  		},
+  		{
+  			"opcode": "poseCameraFrame2D",
+  			"feature": "webgpuMoveNetMultiPose",
+  			"blockType": "REPORTER",
+  			"text": "latest PoseFrame2D JSON of camera [CAMERA_ID]",
+  			"description": "Returns the camera's latest COCO-17 pose frame as JSON, or an empty string before its first inference.",
+  			"arguments": { "CAMERA_ID": {
+  				"type": "STRING",
+  				"defaultValue": "cam-1"
+  			} }
+  		},
+  		{
+  			"opcode": "poseCameraStatusJson",
+  			"feature": "webgpuMoveNetMultiPose",
+  			"blockType": "REPORTER",
+  			"text": "pose status JSON of camera [CAMERA_ID]",
+  			"description": "Returns the camera pipeline's state, error, inference and skipped-frame counts, last inference duration in milliseconds, frame time source (capture or presentation), latest capture timestamp and person count as JSON, or an empty string when it is not started.",
+  			"arguments": { "CAMERA_ID": {
+  				"type": "STRING",
+  				"defaultValue": "cam-1"
+  			} }
+  		},
+  		{
   			"opcode": "protocolJsonValid",
   			"feature": "protocolV1Codec",
   			"blockType": "BOOLEAN",
@@ -3944,12 +4017,17 @@
   	constructor(options) {
   		this.operation = 0;
   		this.sequence = 0;
+  		this.inferences = 0;
+  		this.skippedFrames = 0;
+  		this.lastInferenceMs = 0;
+  		this.lastFrameTimeSource = "";
   		this.pipelineState = "idle";
   		this.pipelineErrorCode = "";
   		this.pipelineErrorMessage = "";
   		this.runtime = options.runtime;
   		this.model = options.model;
   		this.markerSampler = options.markerSampler;
+  		this.measureMs = options.measureMs;
   	}
   	/**
   	* Turns PoseFrame2D v2 output on: every inference also samples the named
@@ -3999,6 +4077,59 @@
   		inference.then(clear, clear);
   		return inference;
   	}
+  	/**
+  	* Infers the frame the camera is showing and carries the capture time Camera
+  	* Source reports for it, instead of a timestamp supplied by the project.
+  	*
+  	* For cameras on one page, whose frame times share the page clock. A frame
+  	* already inferred is not inferred again: with several cameras taking turns
+  	* on one GPU, a camera that has not delivered a new frame gives its turn away.
+  	*/
+  	async inferAtFrameTime() {
+  		if (this.inference) {
+  			await this.inference;
+  			return "inferred";
+  		}
+  		if (!this.detector || !this.lease || !this.startOptions) throw new Error("WebGPU MoveNet MultiPose is not ready.");
+  		let time;
+  		try {
+  			time = this.lease.getFrameSource().frameTime;
+  		} catch (error) {
+  			this.fail("camera-ended", error);
+  		}
+  		if (time === void 0) return "no-frame-time";
+  		if (time.presentedFrames === this.inferredPresentedFrames) {
+  			this.skippedFrames += 1;
+  			return "no-new-frame";
+  		}
+  		this.inferredPresentedFrames = time.presentedFrames;
+  		await this.inferTimed(time);
+  		return "inferred";
+  	}
+  	stats() {
+  		return {
+  			state: this.pipelineState,
+  			errorCode: this.pipelineErrorCode,
+  			inferences: this.inferences,
+  			skippedFrames: this.skippedFrames,
+  			lastInferenceMs: this.lastInferenceMs,
+  			frameTimeSource: this.lastFrameTimeSource,
+  			captureTimestampUs: this.latestFrame?.captureTimestampUs ?? 0,
+  			persons: this.latestFrame?.persons.length ?? 0
+  		};
+  	}
+  	inferTimed(time) {
+  		const operation = this.operation;
+  		const inference = this.runInference(operation, time.timestampUs).then(() => {
+  			if (operation === this.operation) this.lastFrameTimeSource = time.source;
+  		});
+  		this.inference = inference;
+  		const clear = () => {
+  			if (this.inference === inference) this.inference = void 0;
+  		};
+  		inference.then(clear, clear);
+  		return inference;
+  	}
   	async stop() {
   		this.operation += 1;
   		if (this.pipelineState !== "idle" || this.detector || this.lease || this.starting || this.inference) this.pipelineState = "stopping";
@@ -4014,6 +4145,11 @@
   		await lease?.release();
   		this.latestFrame = void 0;
   		this.sequence = 0;
+  		this.inferredPresentedFrames = void 0;
+  		this.inferences = 0;
+  		this.skippedFrames = 0;
+  		this.lastInferenceMs = 0;
+  		this.lastFrameTimeSource = "";
   		this.pipelineState = "idle";
   		this.clearError();
   	}
@@ -4092,6 +4228,7 @@
   			this.fail("camera-ended", error);
   		}
   		let poses;
+  		const started = this.measureMs?.();
   		try {
   			poses = await detector.estimatePoses(frame.element, {
   				maxPoses: 6,
@@ -4101,6 +4238,8 @@
   			this.fail("inference-failed", error);
   		}
   		if (operation !== this.operation) return;
+  		const finished = this.measureMs?.();
+  		this.lastInferenceMs = started === void 0 || finished === void 0 ? 0 : finished - started;
   		let markersByPose;
   		try {
   			markersByPose = this.sampleMarkers(poses, frame);
@@ -4118,6 +4257,7 @@
   				frameHeight: frame.height
   			}, markersByPose);
   			this.sequence += 1;
+  			this.inferences += 1;
   			this.pipelineState = "ready";
   			this.clearError();
   		} catch (error) {
@@ -4192,6 +4332,71 @@
   function isPromise$2(value) {
   	return value !== void 0;
   }
+  //#endregion
+  //#region src/pose/camera-set.ts
+  /**
+  * A pose pipeline per camera, for a page that runs several cameras.
+  *
+  * Each camera keeps its own detector. MoveNet tracks people from one frame to
+  * the next, and a tracker fed frames from two cameras would hand one person's
+  * ID to whoever stands in the same place in the other view. They share the
+  * model port, so WebGPU is initialized once and inference runs on one device;
+  * the project decides the order cameras take turns in.
+  */
+  var PoseCameraSet = class {
+  	constructor(options) {
+  		this.pipelines = /* @__PURE__ */ new Map();
+  		this.outcomes = /* @__PURE__ */ new Map();
+  		this.options = options;
+  	}
+  	async start(options) {
+  		const cameraId = options.cameraId.trim();
+  		let pipeline = this.pipelines.get(cameraId);
+  		if (!pipeline) {
+  			pipeline = new PosePipelineController(this.options);
+  			this.pipelines.set(cameraId, pipeline);
+  		}
+  		this.outcomes.delete(cameraId);
+  		await pipeline.start(options);
+  	}
+  	/** Infers the camera's current frame at its capture time. */
+  	async infer(cameraId) {
+  		const pipeline = this.pipelines.get(cameraId.trim());
+  		if (!pipeline) throw new Error(`Pose camera ${cameraId} is not started.`);
+  		const outcome = await pipeline.inferAtFrameTime();
+  		this.outcomes.set(cameraId.trim(), outcome);
+  	}
+  	async stop(cameraId) {
+  		const id = cameraId.trim();
+  		const pipeline = this.pipelines.get(id);
+  		this.pipelines.delete(id);
+  		this.outcomes.delete(id);
+  		await pipeline?.stop();
+  	}
+  	async stopAll() {
+  		const pipelines = [...this.pipelines.values()];
+  		this.pipelines.clear();
+  		this.outcomes.clear();
+  		await Promise.allSettled(pipelines.map((pipeline) => pipeline.stop()));
+  	}
+  	cameraIds() {
+  		return [...this.pipelines.keys()].sort();
+  	}
+  	latestFrameJson(cameraId) {
+  		return this.pipelines.get(cameraId.trim())?.latestFrameJson() ?? "";
+  	}
+  	status(cameraId) {
+  		const id = cameraId.trim();
+  		const pipeline = this.pipelines.get(id);
+  		if (!pipeline) return void 0;
+  		return {
+  			cameraId: id,
+  			...pipeline.stats(),
+  			lastOutcome: this.outcomes.get(id) ?? "",
+  			error: pipeline.errorMessage()
+  		};
+  	}
+  };
   //#endregion
   //#region node_modules/.pnpm/@tensorflow-models+pose-detection@2.1.3_@mediapipe+pose@0.5.1675469404_@tensorflow+tfjs_0c6be0092751ca0cf34ff9a1dc9e7163/node_modules/@tensorflow-models/pose-detection/dist/calculators/types.js
   var require_types$1 = /* @__PURE__ */ __commonJSMin(((exports) => {
@@ -82447,6 +82652,7 @@
   		this.runStopListener = () => {
   			this.endOfferQrDisplay();
   			this.pose.stop();
+  			this.poseCameras.stopAll();
   			this.calibration.cancel();
   			this.avatar.reset();
   			this.frameSync?.stop();
@@ -82474,9 +82680,15 @@
   		this.errorCorrectionLevel = options.errorCorrectionLevel ?? qrConfig.errorCorrectionLevel;
   		this.runtime = options.runtime ?? Scratch.vm?.runtime ?? {};
   		this.skins = new TemporarySpriteSkinManager(this.runtime);
+  		const poseModel = options.poseModel ?? new TfjsWebGpuMoveNet();
+  		this.poseCameras = new PoseCameraSet({
+  			runtime: this.runtime,
+  			model: poseModel,
+  			measureMs: options.measureMs ?? (() => performance.now())
+  		});
   		this.pose = new PosePipelineController({
   			runtime: this.runtime,
-  			model: options.poseModel ?? new TfjsWebGpuMoveNet(),
+  			model: poseModel,
   			markerSampler: options.markerSampler ?? new CanvasGlowStickSampler(DEFAULT_MARKER_SAMPLING_OPTIONS)
   		});
   		this.protocol = new ProtocolV1Codec(options.nowMilliseconds);
@@ -82616,6 +82828,33 @@
   	}
   	latestPoseFrame2D() {
   		return this.pose.latestFrameJson();
+  	}
+  	async startPoseCamera(args) {
+  		this.requirePoseEnabled();
+  		await this.poseCameras.start({
+  			cameraId: Scratch.Cast.toString(args.CAMERA_ID).trim(),
+  			peerId: Scratch.Cast.toString(args.PEER_ID).trim(),
+  			calibrationId: Scratch.Cast.toString(args.CALIBRATION_ID).trim()
+  		});
+  	}
+  	async inferPoseCameraAtFrameTime(args) {
+  		this.requirePoseEnabled();
+  		await this.poseCameras.infer(Scratch.Cast.toString(args.CAMERA_ID));
+  	}
+  	async stopPoseCamera(args) {
+  		await this.poseCameras.stop(Scratch.Cast.toString(args.CAMERA_ID));
+  	}
+  	async stopAllPoseCameras() {
+  		await this.poseCameras.stopAll();
+  	}
+  	poseCameraFrame2D(args) {
+  		if (!this.poseEnabled) return "";
+  		return this.poseCameras.latestFrameJson(Scratch.Cast.toString(args.CAMERA_ID));
+  	}
+  	poseCameraStatusJson(args) {
+  		if (!this.poseEnabled) return "";
+  		const status = this.poseCameras.status(Scratch.Cast.toString(args.CAMERA_ID));
+  		return status ? JSON.stringify(status) : "";
   	}
   	protocolJsonValid(args) {
   		this.requireProtocolEnabled();
@@ -82977,6 +83216,7 @@
   	dispose() {
   		this.endOfferQrDisplay();
   		this.pose.stop();
+  		this.poseCameras.stopAll();
   		this.calibration.cancel();
   		this.avatar.reset();
   		this.frameSync?.stop();
