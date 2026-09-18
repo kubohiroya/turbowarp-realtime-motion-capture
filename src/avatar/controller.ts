@@ -261,6 +261,33 @@ export class AvatarRetargetController {
     this.succeed("idle");
   }
 
+  /**
+   * Sets an expression on the VRM bound to a person. Connecting Performance DSL effects to
+   * expressions belongs to the application; this only reaches the right avatar. A binding
+   * whose VRM is still loading is skipped, as frames are.
+   */
+  public setExpression(
+    personIdValue: string,
+    name: string,
+    weight: number,
+  ): void {
+    const binding = this.requireBinding(personIdValue);
+    if (!binding.loaded) return;
+    requireAFrameCapability(this.runtime).setVrmExpression(
+      `#${binding.instanceId}`,
+      nonEmpty(name, "expression name"),
+      weight,
+    );
+  }
+
+  public expressionNames(personIdValue: string): string[] {
+    const binding = this.requireBinding(personIdValue);
+    if (!binding.loaded) return [];
+    return requireAFrameCapability(this.runtime).vrmExpressionNames(
+      `#${binding.instanceId}`,
+    );
+  }
+
   public bindingCount(): number {
     return this.bindings.size;
   }
@@ -385,6 +412,13 @@ export class AvatarRetargetController {
     this.setRecognized(aframe, binding, false, timestampUs);
     aframe.deleteSelector(`#${binding.instanceId}`);
     this.bindings.delete(binding.personId);
+  }
+
+  private requireBinding(personIdValue: string): AvatarBinding {
+    const personId = identifier(personIdValue, "person ID");
+    const binding = this.bindings.get(personId);
+    if (!binding) throw new Error(`No avatar is bound to person: ${personId}`);
+    return binding;
   }
 
   private succeed(state: string): void {

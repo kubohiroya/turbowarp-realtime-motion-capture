@@ -12,6 +12,8 @@ const METHODS = [
   "countSelector",
   "loadVrm",
   "setVrmBoneRotation",
+  "setVrmExpression",
+  "vrmExpressionNames",
   "requireVersion",
 ] as const;
 
@@ -48,7 +50,7 @@ export function requireAFrameCapability(
   for (const method of METHODS) {
     if (typeof Reflect.get(capability, method) !== "function") {
       throw new Error(
-        `TurboWarp-A-Frame capability v2 is missing ${method}().`,
+        `TurboWarp-A-Frame capability v2 is missing ${method}(); TurboWarp-A-Frame 0.5.0 or later provides it.`,
       );
     }
   }

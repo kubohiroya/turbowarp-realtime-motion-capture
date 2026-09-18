@@ -43,7 +43,7 @@ flag変更後はprojectと拡張を再読み込みしてください。
 | `webgpuMoveNetMultiPose` | TurboWarp-Camera-Source 0.5.0 | `acquireCamera({owner, cameraId})`     |
 | `protocolV1Codec`        | なし                          | local validationのみ                   |
 | `cameraCalibrationV1`    | TurboWarp-Camera-Source 0.5.0 | 共有named camera lease                 |
-| `avatarRetargetV1`       | TurboWarp-A-Frame 0.4.0       | scene capability version 2のみ         |
+| `avatarRetargetV1`       | TurboWarp-A-Frame 0.5.0       | scene capability version 2のみ         |
 | `frameSyncPatternV1`     | Camera Source 0.5.0とWebRTC 0.3.0 | camera frameと同期時刻              |
 | `poseFusion3D`           | なし                          | blockから渡すPoseFrame2D／calibration JSON |
 | `glowStickMarkers`       | pose／fusion機能              | camera pixel、Performance DSL palette、identity fusion |
@@ -131,6 +131,12 @@ adapterは演者自身の側を動かすため、`RightUpperArm`はVRMの`leftUp
 同様に左右を入れ替えます。`Spine`と`Hips`は`spine`と`hips`を回します。各出力は、計算元の関節が
 bindingのthresholdを満たすときだけ適用します。たとえば`left_shoulder`か`left_elbow`が不確かなら
 `RightUpperArm`を飛ばします。
+
+`set avatar expression [NAME] to [WEIGHT] for person [PERSON_ID]`は、personにbindしたアバターへ
+`happy`や`blink`などのVRMの表情を設定し、`avatar expressions for person [PERSON_ID]`はそのVRMが
+持つ表情名を返します。重みは0〜1に丸め、存在しない名前は例外にし、VRMを読み込み中のアバターは
+飛ばします。Performance DSLのstart／end effectを表情へつなぐのはapplicationの役割です。たとえば
+recognition start eventを受けたscriptが、DSLのeffectが指す表情を設定します。
 
 ## Blockリファレンス
 

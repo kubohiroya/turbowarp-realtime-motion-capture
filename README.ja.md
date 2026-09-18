@@ -20,7 +20,7 @@ multiview pose estimationを使うcamera／fusion application向けの複合Turb
 ## 要件と安全性
 
 - 信頼できるunsandboxed custom extensionを利用できるTurboWarp
-- QR／時刻用WebRTC 0.3.0、video用Camera Source 0.5.0、avatar用A-Frame 0.4.0
+- QR／時刻用WebRTC 0.3.0、video用Camera Source 0.5.0、avatar用A-Frame 0.5.0
 - 姿勢推定用TensorFlow.js WebGPUとcalibration用WebAssembly
 
 全機能は起動時固定・既定OFFです。MoveNetにCPU／WASM／WebGL fallbackはなく、初回model loadは

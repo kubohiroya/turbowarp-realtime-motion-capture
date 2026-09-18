@@ -157,7 +157,9 @@ camera/board geometry and WebAssembly startup remain browser E2E responsibilitie
 `turbowarpAFrameCapability` and calls `requireVersion(2)`; it accepts no other version, so an
 A-Frame build without capability v2, such as 0.3.0, is refused. It uses the public scene
 operations and the VRM operations of that capability, and never accesses A-Frame DOM, Three.js
-objects, or GLTF internals. Capability v2 is published in `@kubohiroya/turbowarp-aframe@0.4.0`.
+objects, or GLTF internals. Capability v2 is published in `@kubohiroya/turbowarp-aframe@0.4.0`;
+its expression operations, which the adapter also requires, arrived in 0.5.0, so the peer is
+pinned to 0.5.0.
 
 An asset registration records a VRM URL and a validated root placement. Binding a person creates
 an empty node from a holder template, loads the VRM onto it, and waits until it is ready; a failed
@@ -187,7 +189,9 @@ transform and preserves its prior value.
 
 At most six person IDs bind to unique template instances. Recognition transitions use configurable
 A-Frame events, allowing the application to connect Performance DSL start/end effects without this
-adapter owning effect execution. Per-person capability failures are collected as `partial` state so
+adapter owning effect execution. To let the application show an effect on the avatar itself, the
+adapter sets a VRM expression on the avatar bound to a person ID, and leaves the choice of which
+expression, and when, to the application. Per-person capability failures are collected as `partial` state so
 other avatars continue. Rebind, explicit reset, project lifecycle reset, and disposal emit end when
 possible, delete created instances, and clear temporary state.
 

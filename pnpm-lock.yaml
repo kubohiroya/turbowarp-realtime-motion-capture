@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@kubohiroya/turbowarp-aframe':
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.5.0
+        version: 0.5.0
       '@kubohiroya/turbowarp-camera-source':
         specifier: 0.7.0
         version: 0.7.0
@@ -304,8 +304,8 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@kubohiroya/turbowarp-aframe@0.4.0':
-    resolution: {integrity: sha512-HAWO9dSnQy0vUTGPIW1eHl2UZBv1uQ0u73XQyLhjm6/vF4TgoCShsbVxUphx54dSfo7WymFBNWVqTZfjiAGX5w==}
+  '@kubohiroya/turbowarp-aframe@0.5.0':
+    resolution: {integrity: sha512-N+ORS+/nSf5T5grrAFhoruWzVngqKIt7GQASh7381ZkDlNZpAXgvJaGNKfYcZdH2JpfYuMiJI/YBK1Ch7LKEaw==}
     engines: {node: '>=22.18.0'}
 
   '@kubohiroya/turbowarp-camera-source@0.7.0':
@@ -1502,7 +1502,7 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@kubohiroya/turbowarp-aframe@0.4.0': {}
+  '@kubohiroya/turbowarp-aframe@0.5.0': {}
 
   '@kubohiroya/turbowarp-camera-source@0.7.0': {}
 

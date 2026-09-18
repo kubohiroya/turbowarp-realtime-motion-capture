@@ -582,6 +582,40 @@
       }
     },
     {
+      "opcode": "setAvatarExpression",
+      "feature": "avatarRetargetV1",
+      "blockType": "COMMAND",
+      "text": "set avatar expression [NAME] to [WEIGHT] for person [PERSON_ID]",
+      "description": "Sets a VRM expression, weight clamped to 0 through 1, on the avatar bound to a PoseFrame3D person ID. An avatar whose VRM is still loading is skipped.",
+      "arguments": {
+        "NAME": {
+          "type": "STRING",
+          "defaultValue": "happy"
+        },
+        "WEIGHT": {
+          "type": "NUMBER",
+          "defaultValue": 1
+        },
+        "PERSON_ID": {
+          "type": "STRING",
+          "defaultValue": "performer-1"
+        }
+      }
+    },
+    {
+      "opcode": "avatarExpressionNames",
+      "feature": "avatarRetargetV1",
+      "blockType": "REPORTER",
+      "text": "avatar expressions for person [PERSON_ID]",
+      "description": "Returns the VRM expression names of the avatar bound to a person as a JSON array, or an empty array while it loads.",
+      "arguments": {
+        "PERSON_ID": {
+          "type": "STRING",
+          "defaultValue": "performer-1"
+        }
+      }
+    },
+    {
       "opcode": "resetAvatarRetarget",
       "feature": "avatarRetargetV1",
       "blockType": "COMMAND",

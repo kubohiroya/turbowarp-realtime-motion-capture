@@ -20,7 +20,7 @@ Composite TurboWarp blocks for camera and fusion applications using multiview po
 ## Requirements and safety
 
 - TurboWarp with trusted unsandboxed custom extensions enabled.
-- WebRTC 0.3.0 for QR/time, Camera Source 0.5.0 for video, and A-Frame 0.4.0 for avatars.
+- WebRTC 0.3.0 for QR/time, Camera Source 0.5.0 for video, and A-Frame 0.5.0 for avatars.
 - TensorFlow.js WebGPU support for pose and WebAssembly support for calibration.
 
 All features are startup-fixed and OFF by default. MoveNet has no CPU, WASM, or WebGL fallback and

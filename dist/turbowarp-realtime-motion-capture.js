@@ -616,6 +616,38 @@
   			}
   		},
   		{
+  			"opcode": "setAvatarExpression",
+  			"feature": "avatarRetargetV1",
+  			"blockType": "COMMAND",
+  			"text": "set avatar expression [NAME] to [WEIGHT] for person [PERSON_ID]",
+  			"description": "Sets a VRM expression, weight clamped to 0 through 1, on the avatar bound to a PoseFrame3D person ID. An avatar whose VRM is still loading is skipped.",
+  			"arguments": {
+  				"NAME": {
+  					"type": "STRING",
+  					"defaultValue": "happy"
+  				},
+  				"WEIGHT": {
+  					"type": "NUMBER",
+  					"defaultValue": 1
+  				},
+  				"PERSON_ID": {
+  					"type": "STRING",
+  					"defaultValue": "performer-1"
+  				}
+  			}
+  		},
+  		{
+  			"opcode": "avatarExpressionNames",
+  			"feature": "avatarRetargetV1",
+  			"blockType": "REPORTER",
+  			"text": "avatar expressions for person [PERSON_ID]",
+  			"description": "Returns the VRM expression names of the avatar bound to a person as a JSON array, or an empty array while it loads.",
+  			"arguments": { "PERSON_ID": {
+  				"type": "STRING",
+  				"defaultValue": "performer-1"
+  			} }
+  		},
+  		{
   			"opcode": "resetAvatarRetarget",
   			"feature": "avatarRetargetV1",
   			"blockType": "COMMAND",
@@ -78253,6 +78285,8 @@
   	"countSelector",
   	"loadVrm",
   	"setVrmBoneRotation",
+  	"setVrmExpression",
+  	"vrmExpressionNames",
   	"requireVersion"
   ];
   /**
@@ -78271,7 +78305,7 @@
   		throw new Error(`TurboWarp-A-Frame capability v2 is required: ${error instanceof Error ? error.message : String(error)}`);
   	}
   	if (typeof capability !== "object" || capability === null) throw new Error("TurboWarp-A-Frame capability v2 is required.");
-  	for (const method of METHODS) if (typeof Reflect.get(capability, method) !== "function") throw new Error(`TurboWarp-A-Frame capability v2 is missing ${method}().`);
+  	for (const method of METHODS) if (typeof Reflect.get(capability, method) !== "function") throw new Error(`TurboWarp-A-Frame capability v2 is missing ${method}(); TurboWarp-A-Frame 0.5.0 or later provides it.`);
   	const version = Reflect.get(capability, "version");
   	if (version !== 2) throw new Error(`TurboWarp-A-Frame capability v2 is required; found version ${String(version)}.`);
   	return capability;
@@ -80005,6 +80039,21 @@
   		this.lastUpdated = 0;
   		this.succeed("idle");
   	}
+  	/**
+  	* Sets an expression on the VRM bound to a person. Connecting Performance DSL effects to
+  	* expressions belongs to the application; this only reaches the right avatar. A binding
+  	* whose VRM is still loading is skipped, as frames are.
+  	*/
+  	setExpression(personIdValue, name, weight) {
+  		const binding = this.requireBinding(personIdValue);
+  		if (!binding.loaded) return;
+  		requireAFrameCapability(this.runtime).setVrmExpression(`#${binding.instanceId}`, nonEmpty(name, "expression name"), weight);
+  	}
+  	expressionNames(personIdValue) {
+  		const binding = this.requireBinding(personIdValue);
+  		if (!binding.loaded) return [];
+  		return requireAFrameCapability(this.runtime).vrmExpressionNames(`#${binding.instanceId}`);
+  	}
   	bindingCount() {
   		return this.bindings.size;
   	}
@@ -80054,6 +80103,12 @@
   		this.setRecognized(aframe, binding, false, timestampUs);
   		aframe.deleteSelector(`#${binding.instanceId}`);
   		this.bindings.delete(binding.personId);
+  	}
+  	requireBinding(personIdValue) {
+  		const personId = identifier(personIdValue, "person ID");
+  		const binding = this.bindings.get(personId);
+  		if (!binding) throw new Error(`No avatar is bound to person: ${personId}`);
+  		return binding;
   	}
   	succeed(state) {
   		this.lastState = state;
@@ -83007,6 +83062,14 @@
   	applyPoseFrame3DToAvatars(args) {
   		this.requireAvatarEnabled();
   		this.avatar.apply(Scratch.Cast.toString(args.POSE3D_JSON), Scratch.Cast.toString(args.POSE2D_JSON));
+  	}
+  	setAvatarExpression(args) {
+  		this.requireAvatarEnabled();
+  		this.avatar.setExpression(Scratch.Cast.toString(args.PERSON_ID), Scratch.Cast.toString(args.NAME), Scratch.Cast.toNumber(args.WEIGHT));
+  	}
+  	avatarExpressionNames(args) {
+  		this.requireAvatarEnabled();
+  		return JSON.stringify(this.avatar.expressionNames(Scratch.Cast.toString(args.PERSON_ID)));
   	}
   	resetAvatarRetarget() {
   		this.avatar.reset();

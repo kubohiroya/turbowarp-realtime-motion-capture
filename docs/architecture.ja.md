@@ -137,7 +137,8 @@ detectorのdisposeで解放します。
 `turbowarpAFrameCapability`へ`requireVersion(2)`を呼び、それ以外のversionは受け付けません。
 capability v2を持たないA-Frame（0.3.0など）は拒否します。そのcapabilityのscene操作とVRM操作だけを
 利用し、A-Frame DOM、Three.js object、GLTF内部へはアクセスしません。capability v2は
-`@kubohiroya/turbowarp-aframe@0.4.0`で公開します。
+`@kubohiroya/turbowarp-aframe@0.4.0`で公開され、adapterが同じく要求する表情の操作は0.5.0で
+加わったため、peerは0.5.0に固定しています。
 
 asset登録ではVRMのURLと検証済みのroot配置を保持します。personをbindすると、holder templateから
 空のnodeを作ってVRMを読み込み、準備ができるまで待ちます。読み込みに失敗したらnodeとbindingを
@@ -164,7 +165,9 @@ VRMに合成の姿勢を入れて確かめました。腕を30°下ろす、片�
 同じ導出によるもので、まだ観測していません。
 
 最大6 person IDを一意なtemplate instanceへbindします。recognition遷移は設定可能なA-Frame
-eventで通知し、application側がPerformance DSLのstart／end effectへ接続できます。1人の
+eventで通知し、application側がPerformance DSLのstart／end effectへ接続できます。effectを
+アバター自身に表せるよう、adapterはperson IDにbindしたアバターへVRMの表情を設定します。どの
+表情をいつ使うかはapplicationが決めます。1人の
 capability失敗は`partial`診断へ集約し、他avatarを継続します。rebind、明示reset、project
 lifecycle reset、disposeでは可能ならend eventを送り、生成instanceと一時状態をcleanupします。
 
