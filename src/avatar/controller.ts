@@ -324,13 +324,17 @@ export class AvatarRetargetController {
       string,
       PoseFrame2DPerson["keypoints"][number]
     >(screenPerson.keypoints.map((point) => [point.id, point] as const));
+    const fromWorld = asset.rig.root === "world";
     const rootConfident = requiredJoints("Hips").every(
       (id) =>
         (worldKeypoints.get(id)?.score ?? 0) >= binding.confidence &&
-        (screenKeypoints.get(id)?.score ?? 0) >= binding.confidence,
+        (fromWorld ||
+          (screenKeypoints.get(id)?.score ?? 0) >= binding.confidence),
     );
-    const root = rig.Hips.worldPosition ?? rig.Hips.position;
-    if (rootConfident) {
+    const root = fromWorld
+      ? worldRoot(worldKeypoints)
+      : (rig.Hips.worldPosition ?? rig.Hips.position);
+    if (rootConfident && root) {
       const [offsetX, offsetY, offsetZ] = asset.rig.rootOffset;
       aframe.setPosition(
         `#${binding.instanceId}`,
@@ -457,12 +461,17 @@ function parseRigMapping(source: string): AvatarRigMapping {
     );
   }
   const allowed = new Set([
+    "root",
     "rootScale",
     "rootOffset",
     "recognitionStartEvent",
     "recognitionEndEvent",
   ]);
   rejectUnknownKeys(value, allowed, "rig mapping");
+  const root = value.root ?? "kalidokit";
+  if (root !== "kalidokit" && root !== "world") {
+    throw new Error('root must be "kalidokit" or "world".');
+  }
   const rootScale = finite(value.rootScale ?? 1, "rootScale");
   if (rootScale <= 0) throw new Error("rootScale must be greater than zero.");
   const rootOffset = vector3(value.rootOffset ?? [0, 0, 0], "rootOffset");
@@ -475,10 +484,31 @@ function parseRigMapping(source: string): AvatarRigMapping {
     "recognitionEndEvent",
   );
   return {
+    root,
     rootScale,
     rootOffset,
     recognitionStartEvent,
     recognitionEndEvent,
+  };
+}
+
+/**
+ * The midpoint of the PoseFrame3D hips, in the scene's axes.
+ *
+ * PoseFrame3D world coordinates are read in the axes Kalidokit reads them in, those of MediaPipe's
+ * world landmarks: x to the viewer's right, y down, z away from the viewer. A-Frame's y is up and
+ * its camera looks down -z, so the scene position is (x, -y, -z).
+ */
+function worldRoot(
+  keypoints: ReadonlyMap<string, PoseFrame3DKeypoint>,
+): { x: number; y: number; z: number } | undefined {
+  const left = keypoints.get("left_hip");
+  const right = keypoints.get("right_hip");
+  if (!left || !right) return undefined;
+  return {
+    x: (left.x + right.x) / 2,
+    y: -(left.y + right.y) / 2,
+    z: -(left.z + right.z) / 2,
   };
 }
 

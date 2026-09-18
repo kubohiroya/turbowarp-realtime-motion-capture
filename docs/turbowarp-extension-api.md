@@ -135,12 +135,20 @@ bones, only the root placement and the recognition events. Every field is option
 
 ```json
 {
+  "root": "kalidokit",
   "rootScale": 1,
   "rootOffset": [0, 0, 0],
   "recognitionStartEvent": "twmp-recognition-start",
   "recognitionEndEvent": "twmp-recognition-end"
 }
 ```
+
+`root` chooses where the avatar stands. `kalidokit`, the default, takes Kalidokit's hips, which it
+estimates from the screen; `world` takes the midpoint of the PoseFrame3D hips, which a fused frame
+measures in the venue, so several performers keep their places relative to each other. PoseFrame3D
+coordinates are read in Kalidokit's axes, x to the viewer's right, y down and z away from the viewer,
+so the scene position is `(x, -y, -z) × rootScale + rootOffset`. The world root needs only the 3D hips
+to pass the binding threshold.
 
 A mapping that still contains `bones` from the former selector rigs is rejected. `rootScale` must be
 positive and confidence thresholds are from 0 through 1. Recognition event data is compact JSON

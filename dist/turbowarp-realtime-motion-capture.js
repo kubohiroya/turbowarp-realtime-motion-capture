@@ -80150,9 +80150,10 @@
   		});
   		const worldKeypoints = new Map(person.keypoints.map((point) => [point.id, point]));
   		const screenKeypoints = new Map(screenPerson.keypoints.map((point) => [point.id, point]));
-  		const rootConfident = requiredJoints("Hips").every((id) => (worldKeypoints.get(id)?.score ?? 0) >= binding.confidence && (screenKeypoints.get(id)?.score ?? 0) >= binding.confidence);
-  		const root = rig.Hips.worldPosition ?? rig.Hips.position;
-  		if (rootConfident) {
+  		const fromWorld = asset.rig.root === "world";
+  		const rootConfident = requiredJoints("Hips").every((id) => (worldKeypoints.get(id)?.score ?? 0) >= binding.confidence && (fromWorld || (screenKeypoints.get(id)?.score ?? 0) >= binding.confidence));
+  		const root = fromWorld ? worldRoot(worldKeypoints) : rig.Hips.worldPosition ?? rig.Hips.position;
+  		if (rootConfident && root) {
   			const [offsetX, offsetY, offsetZ] = asset.rig.rootOffset;
   			aframe.setPosition(`#${binding.instanceId}`, root.x * asset.rig.rootScale + offsetX, root.y * asset.rig.rootScale + offsetY, root.z * asset.rig.rootScale + offsetZ);
   		}
@@ -80210,14 +80211,18 @@
   	const value = parseJsonObject(source, "Avatar rig mapping JSON");
   	if ("bones" in value) throw new Error("Rig mapping no longer takes bones: VRM humanoid bones are driven directly.");
   	rejectUnknownKeys(value, /* @__PURE__ */ new Set([
+  		"root",
   		"rootScale",
   		"rootOffset",
   		"recognitionStartEvent",
   		"recognitionEndEvent"
   	]), "rig mapping");
+  	const root = value.root ?? "kalidokit";
+  	if (root !== "kalidokit" && root !== "world") throw new Error("root must be \"kalidokit\" or \"world\".");
   	const rootScale = finite(value.rootScale ?? 1, "rootScale");
   	if (rootScale <= 0) throw new Error("rootScale must be greater than zero.");
   	return {
+  		root,
   		rootScale,
   		rootOffset: vector3(value.rootOffset ?? [
   			0,
@@ -80226,6 +80231,23 @@
   		], "rootOffset"),
   		recognitionStartEvent: eventName(value.recognitionStartEvent ?? "twmp-recognition-start", "recognitionStartEvent"),
   		recognitionEndEvent: eventName(value.recognitionEndEvent ?? "twmp-recognition-end", "recognitionEndEvent")
+  	};
+  }
+  /**
+  * The midpoint of the PoseFrame3D hips, in the scene's axes.
+  *
+  * PoseFrame3D world coordinates are read in the axes Kalidokit reads them in, those of MediaPipe's
+  * world landmarks: x to the viewer's right, y down, z away from the viewer. A-Frame's y is up and
+  * its camera looks down -z, so the scene position is (x, -y, -z).
+  */
+  function worldRoot(keypoints) {
+  	const left = keypoints.get("left_hip");
+  	const right = keypoints.get("right_hip");
+  	if (!left || !right) return void 0;
+  	return {
+  		x: (left.x + right.x) / 2,
+  		y: -(left.y + right.y) / 2,
+  		z: -(left.z + right.z) / 2
   	};
   }
   function parseJsonObject(source, label) {
