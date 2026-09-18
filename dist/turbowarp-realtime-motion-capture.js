@@ -66276,6 +66276,78 @@
   * =============================================================================
   */
   //#endregion
+  //#region config/pose-model-config.ts
+  var PoseModelConfigError = class extends Error {
+  	constructor(message) {
+  		super(message);
+  		this.name = "PoseModelConfigError";
+  	}
+  };
+  /** The configured source, read from the global object each time the model loads. */
+  function configuredPoseModelSource() {
+  	return resolvePoseModelSource(globalThis.__TWMP_POSE_MODEL__);
+  }
+  /**
+  * Checks a configured value and turns it into a source. A value that is set but malformed fails
+  * loudly rather than falling back to TF Hub: an offline venue would otherwise wait on a network it
+  * does not have, with nothing saying why.
+  */
+  function resolvePoseModelSource(value) {
+  	if (value === void 0 || value === null) return { kind: "tf-hub" };
+  	if (typeof value !== "object") throw new PoseModelConfigError("__TWMP_POSE_MODEL__ must be { url } or { modelJson, weights }.");
+  	const config = value;
+  	if ("url" in config) {
+  		if (typeof config.url !== "string" || config.url.trim() === "") throw new PoseModelConfigError("__TWMP_POSE_MODEL__.url must be the URL of model.json.");
+  		return {
+  			kind: "url",
+  			url: config.url.trim()
+  		};
+  	}
+  	if ("modelJson" in config || "weights" in config) return {
+  		kind: "memory",
+  		artifacts: artifactsOf(config)
+  	};
+  	throw new PoseModelConfigError("__TWMP_POSE_MODEL__ must be { url } or { modelJson, weights }.");
+  }
+  function artifactsOf(config) {
+  	const modelJson = config.modelJson;
+  	if (typeof modelJson !== "object" || modelJson === null) throw new PoseModelConfigError("__TWMP_POSE_MODEL__.modelJson must be the parsed model.json.");
+  	const model = modelJson;
+  	const manifest = model.weightsManifest;
+  	if (model.modelTopology === void 0 || !Array.isArray(manifest) || manifest.some((group) => typeof group !== "object" || group === null || !Array.isArray(group.weights))) throw new PoseModelConfigError("__TWMP_POSE_MODEL__.modelJson is not a TF.js graph model: it needs modelTopology and weightsManifest.");
+  	const weightSpecs = manifest.flatMap((group) => group.weights);
+  	return {
+  		modelTopology: model.modelTopology,
+  		weightSpecs,
+  		weightData: joinWeights(config.weights),
+  		...optional("format", model.format),
+  		...optional("generatedBy", model.generatedBy),
+  		...optional("convertedBy", model.convertedBy),
+  		...optional("signature", model.signature),
+  		...optional("userDefinedMetadata", model.userDefinedMetadata),
+  		...optional("modelInitializer", model.modelInitializer)
+  	};
+  }
+  /** One buffer of every shard's bytes, in order, as `ModelArtifacts.weightData` expects. */
+  function joinWeights(weights) {
+  	const parts = (Array.isArray(weights) ? weights : [weights]).map((shard) => {
+  		if (shard instanceof ArrayBuffer) return new Uint8Array(shard);
+  		if (ArrayBuffer.isView(shard)) return new Uint8Array(shard.buffer, shard.byteOffset, shard.byteLength);
+  		throw new PoseModelConfigError("__TWMP_POSE_MODEL__.weights must be the weight shards as ArrayBuffers or byte arrays.");
+  	});
+  	if (parts.length === 0) throw new PoseModelConfigError("__TWMP_POSE_MODEL__.weights must hold at least one weight shard.");
+  	const joined = new Uint8Array(parts.reduce((total, part) => total + part.byteLength, 0));
+  	let offset = 0;
+  	for (const part of parts) {
+  		joined.set(part, offset);
+  		offset += part.byteLength;
+  	}
+  	return joined.buffer;
+  }
+  function optional(key, value) {
+  	return value === void 0 ? {} : { [key]: value };
+  }
+  //#endregion
   //#region src/pose/tfjs-movenet.ts
   init_dist$1();
   var TfjsWebGpuMoveNet = class {
@@ -66289,10 +66361,13 @@
   		return getBackend() ?? "";
   	}
   	async createMultiPoseDetector() {
+  		const source = configuredPoseModelSource();
   		return await (0, import_detector.load)({
   			modelType: import_constants.MULTIPOSE_LIGHTNING,
   			enableTracking: true,
-  			trackerType: import_types.TrackerType.BoundingBox
+  			trackerType: import_types.TrackerType.BoundingBox,
+  			...source.kind === "url" ? { modelUrl: source.url } : {},
+  			...source.kind === "memory" ? { modelUrl: fromMemory(source.artifacts) } : {}
   		});
   	}
   };

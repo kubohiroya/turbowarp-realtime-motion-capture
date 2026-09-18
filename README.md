@@ -23,8 +23,9 @@ Composite TurboWarp blocks for camera and fusion applications using multiview po
 - WebRTC 0.3.0 for QR/time, Camera Source 0.5.0 for video, and A-Frame 0.5.0 for avatars.
 - TensorFlow.js WebGPU support for pose and WebAssembly support for calibration.
 
-All features are startup-fixed and OFF by default. MoveNet has no CPU, WASM, or WebGL fallback and
-its first model load can require network access. Pairing QR codes can expose ICE credentials and
+All features are startup-fixed and OFF by default. MoveNet has no CPU, WASM, or WebGL fallback. The
+model loads from TF Hub unless the application supplies it through `__TWMP_POSE_MODEL__`, which a venue
+without internet access needs (see the API reference). Pairing QR codes can expose ICE credentials and
 local addresses; display and retain them only in a trusted environment. See the
 [API reference](docs/turbowarp-extension-api.md) for exact dependencies and cleanup behavior.
 
@@ -35,7 +36,7 @@ extension. The usual order is Camera Source, WebRTC, A-Frame, then Realtime Moti
 not used may be omitted. A version-pinned package URL is:
 
 ```text
-https://cdn.jsdelivr.net/npm/@kubohiroya/turbowarp-realtime-motion-capture@0.5.0/dist/turbowarp-realtime-motion-capture.js
+https://cdn.jsdelivr.net/npm/@kubohiroya/turbowarp-realtime-motion-capture@0.6.0/dist/turbowarp-realtime-motion-capture.js
 ```
 
 The npm package distributes a standalone browser bundle, schemas, and documentation. It does not

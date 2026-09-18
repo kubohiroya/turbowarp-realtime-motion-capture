@@ -3,6 +3,7 @@ import { MULTIPOSE_LIGHTNING } from "@tensorflow-models/pose-detection/dist/move
 import { load as loadMoveNet } from "@tensorflow-models/pose-detection/dist/movenet/detector.js";
 import "@tensorflow/tfjs-backend-webgpu";
 import * as tf from "@tensorflow/tfjs-core";
+import { configuredPoseModelSource } from "../../config/pose-model-config.js";
 import type { PoseDetectorPort, PoseModelPort } from "./types.js";
 
 export class TfjsWebGpuMoveNet implements PoseModelPort {
@@ -24,10 +25,19 @@ export class TfjsWebGpuMoveNet implements PoseModelPort {
   }
 
   public async createMultiPoseDetector(): Promise<PoseDetectorPort> {
+    const source = configuredPoseModelSource();
     const detector = await loadMoveNet({
       modelType: MULTIPOSE_LIGHTNING,
       enableTracking: true,
       trackerType: TrackerType.BoundingBox,
+      ...(source.kind === "url" ? { modelUrl: source.url } : {}),
+      ...(source.kind === "memory"
+        ? {
+            modelUrl: tf.io.fromMemory(
+              source.artifacts as unknown as tf.io.ModelArtifacts,
+            ),
+          }
+        : {}),
     });
     return detector as PoseDetectorPort;
   }
