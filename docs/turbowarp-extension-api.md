@@ -2,7 +2,7 @@
 
 [User guide](../README.md) | [日本語](turbowarp-extension-api.ja.md) | [Architecture](architecture.md)
 
-This is the public API reference for `@kubohiroya/turbowarp-realtime-motion-capture` 0.6.0.
+This is the public API reference for `@kubohiroya/turbowarp-realtime-motion-capture` 0.7.0.
 The supported integration surface is the unsandboxed TurboWarp extension: its extension ID,
 opcodes, arguments, reporters, JSON contracts, and runtime capabilities. The TypeScript classes
 under `src/` are implementation details and are not package exports.
@@ -132,6 +132,9 @@ left_knee, right_knee, left_ankle, right_ankle
 A-Frame node, loads the VRM onto it through TurboWarp-A-Frame capability v2, and waits until the
 model is ready. Kalidokit's outputs drive the VRM humanoid bones directly, so the mapping carries no
 bones, only the root placement and the recognition events. Every field is optional.
+
+The VRM URL is at most 2048 characters, except a `data:` URL, which carries the whole VRM for a
+project that bundles its avatar and may be up to 16 MiB.
 
 ```json
 {
