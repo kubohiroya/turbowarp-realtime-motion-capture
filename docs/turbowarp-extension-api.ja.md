@@ -2,7 +2,7 @@
 
 [利用ガイド](../README.ja.md) | [English](turbowarp-extension-api.md) | [アーキテクチャ](architecture.ja.md)
 
-これは`@kubohiroya/turbowarp-realtime-motion-capture` 0.6.0の公開APIリファレンスです。正式な公開面は、
+これは`@kubohiroya/turbowarp-realtime-motion-capture` 0.7.0の公開APIリファレンスです。正式な公開面は、
 サンドボックスなしで動作するTurboWarp機能拡張のID、opcode、引数、reporter、JSON契約、runtime
 capabilityです。`src/`以下のTypeScript classは実装詳細であり、npm packageのexportではありません。
 
@@ -129,6 +129,9 @@ left_knee, right_knee, left_ankle, right_ankle
 作り、TurboWarp-A-Frame capability v2でVRMを読み込んで、準備ができるまで待ちます。Kalidokitの
 出力はVRMのヒューマノイドのボーンを直接動かすため、mappingはboneを持たず、rootの配置と
 recognition eventだけを持ちます。どのfieldも省略できます。
+
+VRMのURLは2048文字までです。ただし`data:` URLは、アバターを同梱するプロジェクトがVRM全体を渡すため、
+16 MiBまで受け付けます。
 
 ```json
 {
