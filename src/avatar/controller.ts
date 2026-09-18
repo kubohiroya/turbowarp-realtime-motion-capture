@@ -35,6 +35,8 @@ interface AvatarBinding {
 
 const identifiers = /^[A-Za-z0-9._-]{1,64}$/u;
 const eventNames = /^[A-Za-z0-9._:-]{1,80}$/u;
+const MAX_URL_LENGTH = 2048;
+const MAX_DATA_URL_LENGTH = 16 * 1024 * 1024;
 /** Every avatar instance is an empty node that the VRM is loaded onto. */
 const HOLDER_TEMPLATE = JSON.stringify({ type: "empty" });
 
@@ -103,8 +105,12 @@ export class AvatarRetargetController {
   ): void {
     const assetId = identifier(assetIdValue, "avatar asset ID");
     const vrmUrl = nonEmpty(vrmUrlValue, "VRM URL");
-    if (vrmUrl.length > 2048)
-      throw new Error("VRM URL exceeds 2048 characters.");
+    // A project that carries its avatar passes the whole VRM as a data URL.
+    const limit = /^data:/iu.test(vrmUrl)
+      ? MAX_DATA_URL_LENGTH
+      : MAX_URL_LENGTH;
+    if (vrmUrl.length > limit)
+      throw new Error(`VRM URL exceeds ${limit} characters.`);
     const rig = parseRigMapping(rigJson);
     const aframe = requireAFrameCapability(this.runtime);
     const templateId = `twmp-avatar-${assetId}`;

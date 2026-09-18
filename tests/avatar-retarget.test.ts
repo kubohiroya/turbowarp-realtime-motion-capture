@@ -228,6 +228,29 @@ describe("AvatarRetargetController", () => {
     expect(() => controller.registerAsset("bad", " ", "{}")).toThrow(
       /VRM URL must not be empty/u,
     );
+    const rig = await fixture("rig.json");
+    expect(() =>
+      controller.registerAsset(
+        "far",
+        `https://example.com/${"a".repeat(2048)}`,
+        rig,
+      ),
+    ).toThrow(/exceeds 2048 characters/u);
+    // A project carries its own avatar as a data URL, which is far longer.
+    expect(() =>
+      controller.registerAsset(
+        "carried",
+        `data:model/gltf-binary;base64,${"A".repeat(100_000)}`,
+        rig,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      controller.registerAsset(
+        "huge",
+        `data:model/gltf-binary;base64,${"A".repeat(16 * 1024 * 1024)}`,
+        rig,
+      ),
+    ).toThrow(/exceeds 16777216 characters/u);
     expect(() => controller.apply("{}", "{}")).toThrow(
       /Invalid PoseFrame3D v1/u,
     );
