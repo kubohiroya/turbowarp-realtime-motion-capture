@@ -132,12 +132,19 @@ recognition eventだけを持ちます。どのfieldも省略できます。
 
 ```json
 {
+  "root": "kalidokit",
   "rootScale": 1,
   "rootOffset": [0, 0, 0],
   "recognitionStartEvent": "twmp-recognition-start",
   "recognitionEndEvent": "twmp-recognition-end"
 }
 ```
+
+`root`はアバターの立ち位置を選びます。既定の`kalidokit`は、Kalidokitが画面から推定した腰を使います。
+`world`はPoseFrame3Dの両腰の中点を使います。統合したフレームなら会場で測った位置なので、複数の演者の
+位置関係が保たれます。PoseFrame3Dの座標はKalidokitの軸（x が見る人の右、y が下、z が見る人から遠ざかる
+向き）で読むため、シーンの位置は`(x, -y, -z) × rootScale + rootOffset`です。`world`は3Dの腰だけが
+bindingのthresholdを満たせば使えます。
 
 以前のselector rigの`bones`を含むmappingは拒否します。`rootScale`は正数、confidenceは0〜1です。
 recognition eventのdataは`personId`、`avatarInstanceId`と、PoseFrame3Dに値がある場合の
