@@ -2,7 +2,7 @@
 
 [利用ガイド](../README.ja.md) | [English](turbowarp-extension-api.md) | [アーキテクチャ](architecture.ja.md)
 
-これは`@kubohiroya/turbowarp-realtime-motion-capture` 0.5.0の公開APIリファレンスです。正式な公開面は、
+これは`@kubohiroya/turbowarp-realtime-motion-capture` 0.6.0の公開APIリファレンスです。正式な公開面は、
 サンドボックスなしで動作するTurboWarp機能拡張のID、opcode、引数、reporter、JSON契約、runtime
 capabilityです。`src/`以下のTypeScript classは実装詳細であり、npm packageのexportではありません。
 
@@ -34,6 +34,23 @@ globalThis.__TWMP_QR_CONFIG__ = { errorCorrectionLevel: "M" };
 
 有効な機能のblockだけがpaletteに現れます。拡張読み込み後にglobal objectを変更しても反映されません。
 flag変更後はprojectと拡張を再読み込みしてください。
+
+### MoveNetのmodelの読込み元
+
+MoveNet MultiPose Lightningは、既定ではTF Hubから読み込むため、pipelineを始めるたびにinternet接続が
+必要です。オフラインで動かすアプリは`__TWMP_POSE_MODEL__`でmodelを渡します。modelを読み込む時点で
+読むので、`startWebGpuMoveNetMultiPose`より前ならいつ設定してもかまいません。
+
+```js
+// アプリが配信するTF.jsのgraph model。weight shardはmodel.jsonと同じ場所に置く。
+globalThis.__TWMP_POSE_MODEL__ = { url: "/models/movenet-multipose-lightning/model.json" };
+
+// またはmemory上のmodel。解析済みのmodel.jsonと、manifestの順に並べたshardのbytes。
+globalThis.__TWMP_POSE_MODEL__ = { modelJson, weights: [shard1, shard2, shard3] };
+```
+
+設定されているのに形が正しくない場合は、TF Hubへ戻らずに`model-load-failed`でpipelineを止めます。
+オフラインの会場で、無いnetworkを待ち続けて理由が分からない、ということを避けるためです。
 
 ## Runtime依存関係
 

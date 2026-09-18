@@ -2,7 +2,7 @@
 
 [User guide](../README.md) | [日本語](turbowarp-extension-api.ja.md) | [Architecture](architecture.md)
 
-This is the public API reference for `@kubohiroya/turbowarp-realtime-motion-capture` 0.5.0.
+This is the public API reference for `@kubohiroya/turbowarp-realtime-motion-capture` 0.6.0.
 The supported integration surface is the unsandboxed TurboWarp extension: its extension ID,
 opcodes, arguments, reporters, JSON contracts, and runtime capabilities. The TypeScript classes
 under `src/` are implementation details and are not package exports.
@@ -36,6 +36,23 @@ globalThis.__TWMP_QR_CONFIG__ = { errorCorrectionLevel: "M" };
 
 Only blocks belonging to enabled features appear in the palette. Changing the global object after
 the extension has loaded has no effect; reload the project and extension after changing flags.
+
+### MoveNet model source
+
+MoveNet MultiPose Lightning loads from TF Hub by default, which needs internet access every time the
+pipeline starts. An application that runs offline supplies the model through `__TWMP_POSE_MODEL__`,
+which is read when the model loads, so it can be set any time before `startWebGpuMoveNetMultiPose`:
+
+```js
+// A TF.js graph model the application serves, with its weight shards beside model.json.
+globalThis.__TWMP_POSE_MODEL__ = { url: "/models/movenet-multipose-lightning/model.json" };
+
+// Or the model carried in memory: the parsed model.json and the shards' bytes, in manifest order.
+globalThis.__TWMP_POSE_MODEL__ = { modelJson, weights: [shard1, shard2, shard3] };
+```
+
+A value that is set but malformed stops the pipeline with `model-load-failed` rather than falling back
+to TF Hub, so an offline venue is told why instead of waiting on a network it does not have.
 
 ## Runtime dependencies
 

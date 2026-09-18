@@ -23,8 +23,9 @@ multiview pose estimationを使うcamera／fusion application向けの複合Turb
 - QR／時刻用WebRTC 0.3.0、video用Camera Source 0.5.0、avatar用A-Frame 0.5.0
 - 姿勢推定用TensorFlow.js WebGPUとcalibration用WebAssembly
 
-全機能は起動時固定・既定OFFです。MoveNetにCPU／WASM／WebGL fallbackはなく、初回model loadは
-network接続を必要とする場合があります。QRにはICE credentialやlocal addressが含まれ得るため、
+全機能は起動時固定・既定OFFです。MoveNetにCPU／WASM／WebGL fallbackはありません。modelは、
+アプリが`__TWMP_POSE_MODEL__`で渡さなければTF Hubから読み込みます。internetの無い会場ではこれが必要です
+（APIリファレンスを参照）。QRにはICE credentialやlocal addressが含まれ得るため、
 信頼できる環境だけで表示・保管してください。正確な依存関係とcleanupは
 [APIリファレンス](docs/turbowarp-extension-api.ja.md)を参照してください。
 
@@ -37,7 +38,7 @@ custom extensionとして読み込みます。通常の順序はCamera Source、
 version固定CDN URL:
 
 ```text
-https://cdn.jsdelivr.net/npm/@kubohiroya/turbowarp-realtime-motion-capture@0.5.0/dist/turbowarp-realtime-motion-capture.js
+https://cdn.jsdelivr.net/npm/@kubohiroya/turbowarp-realtime-motion-capture@0.6.0/dist/turbowarp-realtime-motion-capture.js
 ```
 
 npm packageが公開するのはbrowser向けstandalone bundle、schema、文書です。Composition APIは
