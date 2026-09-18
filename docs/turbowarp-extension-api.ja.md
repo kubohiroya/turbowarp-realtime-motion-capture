@@ -43,7 +43,7 @@ flag変更後はprojectと拡張を再読み込みしてください。
 | `webgpuMoveNetMultiPose` | TurboWarp-Camera-Source 0.5.0 | `acquireCamera({owner, cameraId})`     |
 | `protocolV1Codec`        | なし                          | local validationのみ                   |
 | `cameraCalibrationV1`    | TurboWarp-Camera-Source 0.5.0 | 共有named camera lease                 |
-| `avatarRetargetV1`       | TurboWarp-A-Frame 0.3.0       | scene capability version 1             |
+| `avatarRetargetV1`       | TurboWarp-A-Frame 0.4.0       | scene capability version 2のみ         |
 | `frameSyncPatternV1`     | Camera Source 0.5.0とWebRTC 0.3.0 | camera frameと同期時刻              |
 | `poseFusion3D`           | なし                          | blockから渡すPoseFrame2D／calibration JSON |
 | `glowStickMarkers`       | pose／fusion機能              | camera pixel、Performance DSL palette、identity fusion |
@@ -108,29 +108,29 @@ left_knee, right_knee, left_ankle, right_ankle
 
 ## Avatar rig JSON
 
-`register avatar asset`にはA-Frame template JSON文字列と、別のrig mappingを渡します。各boneの
-selectorには`{avatar}`が必要で、bindしたinstance IDへ置換後、ちょうど1 nodeに一致する必要があります。
+`register avatar asset`にはVRMのURLとrig mappingを渡します。personをbindすると空のA-Frame nodeを
+作り、TurboWarp-A-Frame capability v2でVRMを読み込んで、準備ができるまで待ちます。Kalidokitの
+出力はVRMのヒューマノイドのボーンを直接動かすため、mappingはboneを持たず、rootの配置と
+recognition eventだけを持ちます。どのfieldも省略できます。
 
 ```json
 {
   "rootScale": 1,
   "rootOffset": [0, 0, 0],
   "recognitionStartEvent": "twmp-recognition-start",
-  "recognitionEndEvent": "twmp-recognition-end",
-  "bones": [
-    {
-      "selector": "#{avatar}-left-arm",
-      "rig": "LeftUpperArm",
-      "offsetDegrees": [0, 0, 0]
-    }
-  ]
+  "recognitionEndEvent": "twmp-recognition-end"
 }
 ```
 
-`rig`は`RightUpperArm`, `RightLowerArm`, `LeftUpperArm`, `LeftLowerArm`, `RightHand`,
-`LeftHand`, `RightUpperLeg`, `RightLowerLeg`, `LeftUpperLeg`, `LeftLowerLeg`, `Spine`, `Hips`
-のいずれかです。`rootScale`は正数、confidenceは0〜1、boneは1〜32個です。recognition eventの
-dataは`personId`、`avatarInstanceId`と、PoseFrame3Dに値がある場合の`timestampUs`を持つJSONです。
+以前のselector rigの`bones`を含むmappingは拒否します。`rootScale`は正数、confidenceは0〜1です。
+recognition eventのdataは`personId`、`avatarInstanceId`と、PoseFrame3Dに値がある場合の
+`timestampUs`を持つJSONです。
+
+Kalidokitは鏡に映した自撮りの視点で解きます。`Right*`の出力は演者の左のlandmarkから計算されます。
+adapterは演者自身の側を動かすため、`RightUpperArm`はVRMの`leftUpperArm`を回し、腕・手・脚も
+同様に左右を入れ替えます。`Spine`と`Hips`は`spine`と`hips`を回します。各出力は、計算元の関節が
+bindingのthresholdを満たすときだけ適用します。たとえば`left_shoulder`か`left_elbow`が不確かなら
+`RightUpperArm`を飛ばします。
 
 ## Blockリファレンス
 

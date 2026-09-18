@@ -443,14 +443,14 @@ describe("MultiviewPoseExtension offer QR blocks", () => {
     expect(extension.protocolErrorMessage()).toMatch(/Invalid JSON/u);
   });
 
-  it("cleans avatar instances through A-Frame capability v1 on disposal", () => {
+  it("cleans avatar instances through A-Frame capability v2 on disposal", async () => {
     const { runtime, listeners } = setup();
     const nodes = new Set<string>();
     const deleteSelector = vi.fn((selector: string) =>
       nodes.delete(selector.replace(/^#/u, "")),
     );
     runtime[AFRAME_CAPABILITY_KEY] = {
-      version: 1,
+      version: 2,
       requireVersion() {
         return this;
       },
@@ -459,12 +459,13 @@ describe("MultiviewPoseExtension offer QR blocks", () => {
         (_template: string, instance: string) => void nodes.add(instance),
       ),
       setPosition: vi.fn(),
-      setRotation: vi.fn(),
       emitEvent: vi.fn(),
       deleteSelector,
       countSelector: vi.fn((selector: string) =>
         nodes.has(selector.replace(/^#/u, "")) ? 1 : 0,
       ),
+      loadVrm: vi.fn(async () => undefined),
+      setVrmBoneRotation: vi.fn(),
     };
     const extension = new MultiviewPoseExtension({
       runtime,
@@ -472,10 +473,10 @@ describe("MultiviewPoseExtension offer QR blocks", () => {
     });
     extension.registerAvatarAsset({
       ASSET_ID: "actor",
-      TEMPLATE_JSON: '{"type":"group"}',
-      RIG_JSON: '{"bones":[{"selector":"#{avatar}-arm","rig":"LeftUpperArm"}]}',
+      VRM_URL: "avatars/actor.vrm",
+      RIG_JSON: "{}",
     });
-    extension.bindAvatarPerson({
+    await extension.bindAvatarPerson({
       PERSON_ID: "performer-1",
       INSTANCE_ID: "avatar-1",
       ASSET_ID: "actor",

@@ -1,21 +1,23 @@
 import type { Coco17KeypointId } from "../pose/types.js";
 
-export interface AFramePublicBlockPort {
-  readonly version: 1;
-  requireVersion(version: number): AFramePublicBlockPort;
+/** The part of TurboWarp-A-Frame capability v2 that avatar retargeting uses. */
+export interface AFrameCapabilityPort {
+  readonly version: 2;
+  requireVersion(version: number): AFrameCapabilityPort;
   loadTemplate(id: string, source: string): void;
   createFromTemplate(template: string, instance: string, parent: string): void;
   setPosition(selector: string, x: number, y: number, z: number): void;
-  setRotation(selector: string, x: number, y: number, z: number): void;
   emitEvent(type: string, selector: string, data: string): void;
   deleteSelector(selector: string): void;
   countSelector(selector: string): number;
-}
-
-export interface AvatarRigBone {
-  selector: string;
-  rig: KalidokitRigKey;
-  offsetDegrees: readonly [number, number, number];
+  loadVrm(url: string, selector: string): Promise<void>;
+  setVrmBoneRotation(
+    selector: string,
+    bone: string,
+    x: number,
+    y: number,
+    z: number,
+  ): void;
 }
 
 export const KALIDOKIT_RIG_KEYS = [
@@ -65,7 +67,6 @@ export interface AvatarRigMapping {
   rootOffset: readonly [number, number, number];
   recognitionStartEvent: string;
   recognitionEndEvent: string;
-  bones: readonly AvatarRigBone[];
 }
 
 export interface PoseFrame3DKeypoint {

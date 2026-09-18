@@ -505,20 +505,20 @@
       "opcode": "registerAvatarAsset",
       "feature": "avatarRetargetV1",
       "blockType": "COMMAND",
-      "text": "register avatar asset [ASSET_ID] template JSON [TEMPLATE_JSON] rig JSON [RIG_JSON]",
-      "description": "Registers an A-Frame 0.3.0 template and its Kalidokit rig-output selector mapping.",
+      "text": "register avatar asset [ASSET_ID] VRM [VRM_URL] rig JSON [RIG_JSON]",
+      "description": "Registers a VRM model and its root placement for avatars driven through TurboWarp-A-Frame capability v2.",
       "arguments": {
         "ASSET_ID": {
           "type": "STRING",
           "defaultValue": "actor"
         },
-        "TEMPLATE_JSON": {
+        "VRM_URL": {
           "type": "STRING",
-          "defaultValue": "{\"type\":\"group\",\"children\":[]}"
+          "defaultValue": "avatar.vrm"
         },
         "RIG_JSON": {
           "type": "STRING",
-          "defaultValue": "{\"bones\":[{\"selector\":\"#{avatar}-left-arm\",\"rig\":\"LeftUpperArm\"}]}"
+          "defaultValue": "{\"rootScale\":1,\"rootOffset\":[0,0,0]}"
         }
       }
     },
@@ -527,7 +527,7 @@
       "feature": "avatarRetargetV1",
       "blockType": "COMMAND",
       "text": "bind person [PERSON_ID] to avatar [INSTANCE_ID] asset [ASSET_ID] under [PARENT] confidence [CONFIDENCE]",
-      "description": "Creates an avatar instance and binds one PoseFrame3D person ID to it.",
+      "description": "Creates an avatar instance, loads its VRM, and binds one PoseFrame3D person ID to it. The block waits until the VRM is ready.",
       "arguments": {
         "PERSON_ID": {
           "type": "STRING",

@@ -14,13 +14,13 @@ multiview pose estimationを使うcamera／fusion application向けの複合Turb
 - WebGPU MoveNet MultiPoseで最大6人を追跡し、PoseFrame2D v1／v2 JSONを返します。
 - このpackageが所有するmultiview-pose JSON contractを検証します。
 - chessboardとOpenCV.jsで共有cameraをcalibrationします。
-- 外部PoseFrame3D v1を宣言的なA-Frame avatar rigへretargetします。
+- 外部PoseFrame3D v1をA-FrameのVRMアバターへretargetします。
 - camera timingを計測し、同期した2D poseを3Dへ統合して、サイリウムで演者を識別します。
 
 ## 要件と安全性
 
 - 信頼できるunsandboxed custom extensionを利用できるTurboWarp
-- QR／時刻用WebRTC 0.3.0、video用Camera Source 0.5.0、avatar用A-Frame 0.3.0
+- QR／時刻用WebRTC 0.3.0、video用Camera Source 0.5.0、avatar用A-Frame 0.4.0
 - 姿勢推定用TensorFlow.js WebGPUとcalibration用WebAssembly
 
 全機能は起動時固定・既定OFFです。MoveNetにCPU／WASM／WebGL fallbackはなく、初回model loadは

@@ -134,22 +134,34 @@ detectorのdisposeで解放します。
 ## PoseFrame3D avatar retarget
 
 `avatarRetargetV1`は独立した起動時固定・既定OFF flagです。runtime key
-`turbowarpAFrameCapability`へ`requireVersion(1)`を呼び、TurboWarp-A-Frame capabilityの公開同期
-scene操作7種だけを利用します。A-Frame DOM、Three.js `object3D`、GLTF内部boneへはアクセス
-しません。capability v1は`@kubohiroya/turbowarp-aframe@0.3.0`で公開済みです。
+`turbowarpAFrameCapability`へ`requireVersion(2)`を呼び、それ以外のversionは受け付けません。
+capability v2を持たないA-Frame（0.3.0など）は拒否します。そのcapabilityのscene操作とVRM操作だけを
+利用し、A-Frame DOM、Three.js object、GLTF内部へはアクセスしません。capability v2は
+`@kubohiroya/turbowarp-aframe@0.4.0`で公開します。
 
-asset登録では宣言的template JSONをA-Frameへ送り、検証済みrig mappingを保持します。各boneは
-対応するKalidokit pose rig出力、`{avatar}`を含むselector、任意Euler offset degreeで定義します。
-適用時は対応するexact-v1 PoseFrame3DとPoseFrame2Dの両方を要求します。PoseFrame3Dの`personId`と
-PoseFrame2Dの`trackingId`が一致するpersonだけを結合しますが、これは時刻alignmentではありません。
+asset登録ではVRMのURLと検証済みのroot配置を保持します。personをbindすると、holder templateから
+空のnodeを作ってVRMを読み込み、準備ができるまで待ちます。読み込みに失敗したらnodeとbindingを
+取り除きます。適用時は対応するexact-v1 PoseFrame3DとPoseFrame2Dの両方を要求します。
+PoseFrame3Dの`personId`とPoseFrame2Dの`trackingId`が一致するpersonだけを結合しますが、これは
+時刻alignmentではありません。
 
 adapterは両方のCOCO-17 recordを、exact pinした`kalidokit@1.1.5`が要求する33 positionへ
 決定論的に変換します。screen座標にはPoseFrame2Dの`frameWidth`／`frameHeight`を使い、world座標は
 外部serviceの値を維持します。不足するBlazePose face／hand／foot pointは低visibilityで中点補間
 または複製します。`runtime: "tfjs"`、`enableLegs: true`のKalidokit `Pose.solve`だけをrotation
-solverとし、radian出力をA-Frame degreeへ変換します。hips結果にroot scale／offsetを適用し、
+solverとし、hips結果にroot scale／offsetを適用し、
 自前rotation fallbackは持ちません。joint／personがbinding threshold未満なら該当transformだけを
 skipし、直前値を維持します。
+
+Kalidokitは、VRM 0.xのボーンの軸で、鏡に映した自撮りの視点を解きます。`Right*`の出力は演者の
+左のlandmarkから来るため、各出力は反対側のVRMヒューマノイドのボーンを回し、演者自身の側を
+動かします。回転は度で正規化されたボーンへ書きます。正規化されたボーンはVRM 0.xからYまわりに
+半回転したVRM 1.0の軸を使うためxとzの符号が反転し、反対側を動かすことで正中面について鏡映する
+ためyとzの符号が反転します。合わせて符号は(-x, -y, z)になります。これはKalidokit 1.1.5と
+VRMに合成の姿勢を入れて確かめました。腕を30°下ろす、片腕を水平に保つ、膝を上げる、前腕を前へ
+伸ばす、のいずれも演者自身の手足が同じ向きに動きました。Kalidokitの腕の出力は、水平より上げた
+腕と下げた腕をほとんど区別せず、体を傾けてもspineの傾きを返さなかったため、spineとhipsの符号は
+同じ導出によるもので、まだ観測していません。
 
 最大6 person IDを一意なtemplate instanceへbindします。recognition遷移は設定可能なA-Frame
 eventで通知し、application側がPerformance DSLのstart／end effectへ接続できます。1人の
@@ -159,7 +171,7 @@ lifecycle reset、disposeでは可能ならend eventを送り、生成instance�
 PoseFrame3Dは別実装の3D serviceから届くexact v1境界dataです。`timestampUs`は不透明値として
 recognition event dataへcopyするだけです。frame alignment、履歴保持／query、triangulation、
 3D solveは行いません。Kalidokitは上流でdeprecatedでありnative BlazePose landmarkを想定するため、
-このCOCO-17拡張は明示的な精度制約です。release前に対象GLTF rigを実browserで検証します。
+このCOCO-17拡張は明示的な精度制約です。release前に実際の記録でretargetを検証します。
 
 ## フレーム同期パターンの縦切り
 

@@ -583,13 +583,13 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
 
   public registerAvatarAsset(args: {
     ASSET_ID: unknown;
-    TEMPLATE_JSON: unknown;
+    VRM_URL: unknown;
     RIG_JSON: unknown;
   }): void {
     this.requireAvatarEnabled();
     this.avatar.registerAsset(
       Scratch.Cast.toString(args.ASSET_ID),
-      Scratch.Cast.toString(args.TEMPLATE_JSON),
+      Scratch.Cast.toString(args.VRM_URL),
       Scratch.Cast.toString(args.RIG_JSON),
     );
   }
@@ -600,9 +600,9 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     ASSET_ID: unknown;
     PARENT: unknown;
     CONFIDENCE: unknown;
-  }): void {
+  }): Promise<void> {
     this.requireAvatarEnabled();
-    this.avatar.bind(
+    return this.avatar.bind(
       Scratch.Cast.toString(args.PERSON_ID),
       Scratch.Cast.toString(args.INSTANCE_ID),
       Scratch.Cast.toString(args.ASSET_ID),

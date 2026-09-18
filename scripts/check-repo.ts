@@ -328,9 +328,12 @@ function checkAvatarPolicy() {
     !avatarCapability.includes(
       'AFRAME_CAPABILITY_KEY = "turbowarpAFrameCapability"',
     ) ||
-    !avatarCapability.includes("requireVersion(1)")
+    !avatarCapability.includes("requireVersion.call(candidate, 2)") ||
+    avatarCapability.includes("requireVersion(1)")
   ) {
-    errors.push("Avatar retargeting must require A-Frame scene capability v1");
+    errors.push(
+      "Avatar retargeting must require A-Frame scene capability v2 only",
+    );
   }
   if (
     /ext_turbowarpaframe|object3D|querySelector|getElementById/u.test(
