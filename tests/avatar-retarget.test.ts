@@ -344,6 +344,33 @@ describe("AvatarRetargetController", () => {
     expect(capability.setVrmExpression).toHaveBeenCalledTimes(1);
   });
 
+  it("stands the avatar on the PoseFrame3D hips when the rig asks for the world root", async () => {
+    const context = mockCapability();
+    const controller = new AvatarRetargetController(context.runtime, {
+      solve: vi.fn(() => solvedRig()),
+    });
+    controller.registerAsset(
+      "actor",
+      VRM_URL,
+      JSON.stringify({ root: "world", rootScale: 2, rootOffset: [1, 2, 3] }),
+    );
+    await controller.bind("performer-1", "avatar-1", "actor", "#scene", 0.3);
+    const screen = person2d("performer-1");
+    // The screen hips are unsure; the world root does not read them.
+    screen.keypoints[11]!.score = 0.1;
+    controller.apply(frame([person("performer-1")]), frame2d([screen]));
+    // Hips at (0, 1, 1) and (2, 1, 1): midpoint (1, 1, 1), in scene axes (1, -1, -1), then scaled and offset.
+    expect(context.capability.setPosition).toHaveBeenCalledWith(
+      "#avatar-1",
+      3,
+      0,
+      1,
+    );
+    expect(() =>
+      controller.registerAsset("bad", VRM_URL, '{"root":"floor"}'),
+    ).toThrow(/root must be "kalidokit" or "world"/u);
+  });
+
   it("fails closed unless A-Frame provides capability v2", async () => {
     const rig = await fixture("rig.json");
     expect(() =>

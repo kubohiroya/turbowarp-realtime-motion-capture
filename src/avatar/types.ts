@@ -65,6 +65,11 @@ export interface KalidokitPoseRig {
 }
 
 export interface AvatarRigMapping {
+  /**
+   * Where the avatar stands. `kalidokit` takes Kalidokit's hips, estimated from the screen;
+   * `world` takes the PoseFrame3D hips, which a fused frame measures in the venue.
+   */
+  root: "kalidokit" | "world";
   rootScale: number;
   rootOffset: readonly [number, number, number];
   recognitionStartEvent: string;

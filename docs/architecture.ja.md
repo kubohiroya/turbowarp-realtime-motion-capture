@@ -150,7 +150,8 @@ adapterは両方のCOCO-17 recordを、exact pinした`kalidokit@1.1.5`が要求
 決定論的に変換します。screen座標にはPoseFrame2Dの`frameWidth`／`frameHeight`を使い、world座標は
 外部serviceの値を維持します。不足するBlazePose face／hand／foot pointは低visibilityで中点補間
 または複製します。`runtime: "tfjs"`、`enableLegs: true`のKalidokit `Pose.solve`だけをrotation
-solverとし、hips結果にroot scale／offsetを適用し、
+solverとし、hips結果にroot scale／offsetを適用します。rigが`root: "world"`なら、Kalidokitの軸で読んだ
+PoseFrame3Dの両腰の中点をシーンの`(x, -y, -z)`に置き、統合したフレームが測った位置に立たせます。
 自前rotation fallbackは持ちません。joint／personがbinding threshold未満なら該当transformだけを
 skipし、直前値を維持します。
 

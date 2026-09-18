@@ -172,7 +172,9 @@ exact-pinned `kalidokit@1.1.5`. Screen coordinates use PoseFrame2D `frameWidth` 
 world coordinates retain the external service coordinate values. Missing BlazePose face, hand, and
 foot points are midpoint-interpolated or duplicated with reduced visibility. Kalidokit `Pose.solve`
 with `runtime: "tfjs"` and `enableLegs: true` is the sole rotation solver. Its hips result drives
-the configured root scale and offset.
+the configured root scale and offset, unless the rig sets `root: "world"`: then the midpoint of the
+PoseFrame3D hips, read in Kalidokit's axes and placed at `(x, -y, -z)` in the scene, stands the
+avatar where the fused frame measured the performer.
 
 Kalidokit solves a mirrored selfie view for VRM 0.x bone axes. Its `Right*` outputs come from the
 performer's left landmarks, so each output turns the opposite VRM humanoid bone, which moves the
