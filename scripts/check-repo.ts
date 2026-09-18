@@ -315,10 +315,10 @@ function checkAvatarPolicy() {
   }
   if (
     packageMetadata.peerDependencies?.["@kubohiroya/turbowarp-aframe"] !==
-    "0.3.0"
+    "0.4.0"
   ) {
     errors.push(
-      "package.json must pin the TurboWarp-A-Frame peer exactly to 0.3.0",
+      "package.json must pin the TurboWarp-A-Frame peer exactly to 0.4.0",
     );
   }
   if (!featureFlagSource.includes("avatarRetargetV1")) {
@@ -328,9 +328,12 @@ function checkAvatarPolicy() {
     !avatarCapability.includes(
       'AFRAME_CAPABILITY_KEY = "turbowarpAFrameCapability"',
     ) ||
-    !avatarCapability.includes("requireVersion(1)")
+    !avatarCapability.includes("requireVersion.call(candidate, 2)") ||
+    avatarCapability.includes("requireVersion(1)")
   ) {
-    errors.push("Avatar retargeting must require A-Frame scene capability v1");
+    errors.push(
+      "Avatar retargeting must require A-Frame scene capability v2 only",
+    );
   }
   if (
     /ext_turbowarpaframe|object3D|querySelector|getElementById/u.test(

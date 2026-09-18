@@ -14,13 +14,13 @@ Composite TurboWarp blocks for camera and fusion applications using multiview po
 - Runs WebGPU MoveNet MultiPose for up to six people and reports PoseFrame2D v1/v2 JSON.
 - Validates the owned multiview-pose JSON contracts.
 - Calibrates shared cameras with a chessboard and OpenCV.js.
-- Retargets external PoseFrame3D v1 data to declarative A-Frame avatar rigs.
+- Retargets external PoseFrame3D v1 data to VRM avatars in A-Frame.
 - Measures camera timing, fuses synchronized 2D poses into 3D, and identifies performers by glow sticks.
 
 ## Requirements and safety
 
 - TurboWarp with trusted unsandboxed custom extensions enabled.
-- WebRTC 0.3.0 for QR/time, Camera Source 0.5.0 for video, and A-Frame 0.3.0 for avatars.
+- WebRTC 0.3.0 for QR/time, Camera Source 0.5.0 for video, and A-Frame 0.4.0 for avatars.
 - TensorFlow.js WebGPU support for pose and WebAssembly support for calibration.
 
 All features are startup-fixed and OFF by default. MoveNet has no CPU, WASM, or WebGL fallback and

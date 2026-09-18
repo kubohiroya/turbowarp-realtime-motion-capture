@@ -45,7 +45,7 @@ the extension has loaded has no effect; reload the project and extension after c
 | `webgpuMoveNetMultiPose` | TurboWarp-Camera-Source 0.5.0 | `acquireCamera({owner, cameraId})`      |
 | `protocolV1Codec`        | None                          | Local validation only                   |
 | `cameraCalibrationV1`    | TurboWarp-Camera-Source 0.5.0 | Shared named camera lease               |
-| `avatarRetargetV1`       | TurboWarp-A-Frame 0.3.0       | Scene capability, version 1             |
+| `avatarRetargetV1`       | TurboWarp-A-Frame 0.4.0       | Scene capability, version 2 only        |
 | `frameSyncPatternV1`     | Camera Source 0.5.0 and WebRTC 0.3.0 | Camera frames and synchronized time |
 | `poseFusion3D`           | None                           | PoseFrame2D and calibration JSON supplied through blocks |
 | `glowStickMarkers`       | Pose and fusion features       | Camera pixels, Performance DSL palette, and identity fusion |
@@ -111,31 +111,29 @@ left_knee, right_knee, left_ankle, right_ankle
 
 ## Avatar rig JSON
 
-`register avatar asset` accepts an A-Frame template JSON string and a separate rig mapping. Every
-bone selector must contain `{avatar}`, which is replaced with the bound instance ID, and must match
-exactly one node.
+`register avatar asset` takes a VRM URL and a rig mapping. Binding a person creates an empty
+A-Frame node, loads the VRM onto it through TurboWarp-A-Frame capability v2, and waits until the
+model is ready. Kalidokit's outputs drive the VRM humanoid bones directly, so the mapping carries no
+bones, only the root placement and the recognition events. Every field is optional.
 
 ```json
 {
   "rootScale": 1,
   "rootOffset": [0, 0, 0],
   "recognitionStartEvent": "twmp-recognition-start",
-  "recognitionEndEvent": "twmp-recognition-end",
-  "bones": [
-    {
-      "selector": "#{avatar}-left-arm",
-      "rig": "LeftUpperArm",
-      "offsetDegrees": [0, 0, 0]
-    }
-  ]
+  "recognitionEndEvent": "twmp-recognition-end"
 }
 ```
 
-Supported `rig` values are `RightUpperArm`, `RightLowerArm`, `LeftUpperArm`, `LeftLowerArm`,
-`RightHand`, `LeftHand`, `RightUpperLeg`, `RightLowerLeg`, `LeftUpperLeg`, `LeftLowerLeg`, `Spine`,
-and `Hips`. `rootScale` must be positive, confidence thresholds are from 0 through 1, and a rig may
-contain 1–32 bones. Recognition event data is compact JSON containing `personId`,
-`avatarInstanceId`, and, when supplied by PoseFrame3D, `timestampUs`.
+A mapping that still contains `bones` from the former selector rigs is rejected. `rootScale` must be
+positive and confidence thresholds are from 0 through 1. Recognition event data is compact JSON
+containing `personId`, `avatarInstanceId`, and, when supplied by PoseFrame3D, `timestampUs`.
+
+Kalidokit solves a mirrored selfie view: its `Right*` outputs are computed from the performer's
+left landmarks. The adapter drives the performer's own side, so `RightUpperArm` turns the VRM
+`leftUpperArm`, and so on for the arms, hands, and legs; `Spine` and `Hips` turn `spine` and
+`hips`. Each output also needs the joints it is computed from to pass the binding threshold, so
+`RightUpperArm` is skipped when `left_shoulder` or `left_elbow` is unsure.
 
 ## Block reference
 
@@ -601,21 +599,21 @@ Exports the last validated exact v1 profile, or an empty string when none exists
 | Type | Reporter |
 | Opcode | `cameraCalibrationJson` |
 
-### `register avatar asset [ASSET_ID] template JSON [TEMPLATE_JSON] rig JSON [RIG_JSON]`
+### `register avatar asset [ASSET_ID] VRM [VRM_URL] rig JSON [RIG_JSON]`
 
-Registers an A-Frame 0.3.0 template and its Kalidokit rig-output selector mapping.
+Registers a VRM model and its root placement for avatars driven through TurboWarp-A-Frame capability v2.
 
 | Property | Value |
 |---|---|
 | Type | Command |
 | Opcode | `registerAvatarAsset` |
 | `ASSET_ID` | String, default: `actor` |
-| `TEMPLATE_JSON` | String, default: `{"type":"group","children":[]}` |
-| `RIG_JSON` | String, default: `{"bones":[{"selector":"#{avatar}-left-arm","rig":"LeftUpperArm"}]}` |
+| `VRM_URL` | String, default: `avatar.vrm` |
+| `RIG_JSON` | String, default: `{"rootScale":1,"rootOffset":[0,0,0]}` |
 
 ### `bind person [PERSON_ID] to avatar [INSTANCE_ID] asset [ASSET_ID] under [PARENT] confidence [CONFIDENCE]`
 
-Creates an avatar instance and binds one PoseFrame3D person ID to it.
+Creates an avatar instance, loads its VRM, and binds one PoseFrame3D person ID to it. The block waits until the VRM is ready.
 
 | Property | Value |
 |---|---|

@@ -1,13 +1,12 @@
 import { Value } from "@sinclair/typebox/value";
 import { PoseFrame2DSchema, PoseFrame3DSchema } from "../protocol/schemas.js";
-import { requireAFramePublicBlocks } from "./aframe-port.js";
+import { requireAFrameCapability } from "./aframe-port.js";
 import { KalidokitPoseAdapter } from "./kalidokit-adapter.js";
 import { KALIDOKIT_RIG_KEYS } from "./types.js";
 import type { Coco17KeypointId } from "../pose/types.js";
 import type {
-  AFramePublicBlockPort,
+  AFrameCapabilityPort,
   AvatarPoseSolverPort,
-  AvatarRigBone,
   AvatarRigMapping,
   KalidokitPoseRig,
   KalidokitRigKey,
@@ -21,6 +20,7 @@ import type {
 interface AvatarAsset {
   id: string;
   templateId: string;
+  vrmUrl: string;
   rig: AvatarRigMapping;
 }
 
@@ -30,25 +30,51 @@ interface AvatarBinding {
   assetId: string;
   confidence: number;
   recognized: boolean;
+  loaded: boolean;
 }
 
 const identifiers = /^[A-Za-z0-9._-]{1,64}$/u;
 const eventNames = /^[A-Za-z0-9._:-]{1,80}$/u;
-const KALIDOKIT_RIG_KEY_SET = new Set<KalidokitRigKey>(KALIDOKIT_RIG_KEYS);
+/** Every avatar instance is an empty node that the VRM is loaded onto. */
+const HOLDER_TEMPLATE = JSON.stringify({ type: "empty" });
+
+/**
+ * Kalidokit solves a mirrored selfie view: its `Right*` outputs come from the performer's
+ * left landmarks. A stage avatar moves the performer's own side, so each output drives the
+ * opposite VRM humanoid bone.
+ */
+const VRM_BONES: Record<KalidokitRigKey, string> = {
+  RightUpperArm: "leftUpperArm",
+  RightLowerArm: "leftLowerArm",
+  LeftUpperArm: "rightUpperArm",
+  LeftLowerArm: "rightLowerArm",
+  RightHand: "leftHand",
+  LeftHand: "rightHand",
+  RightUpperLeg: "leftUpperLeg",
+  RightLowerLeg: "leftLowerLeg",
+  LeftUpperLeg: "rightUpperLeg",
+  LeftLowerLeg: "rightLowerLeg",
+  Spine: "spine",
+  Hips: "hips",
+};
+/**
+ * The joints each Kalidokit output is computed from. Its `Right*` outputs read the
+ * performer's left landmarks (BlazePose 11, 13, 15, 23, 25, 27), and `Left*` the right.
+ */
 const RIG_REQUIRED_JOINTS: Record<
   KalidokitRigKey,
   readonly Coco17KeypointId[]
 > = {
-  RightUpperArm: ["right_shoulder", "right_elbow"],
-  RightLowerArm: ["right_elbow", "right_wrist"],
-  LeftUpperArm: ["left_shoulder", "left_elbow"],
-  LeftLowerArm: ["left_elbow", "left_wrist"],
-  RightHand: ["right_wrist"],
-  LeftHand: ["left_wrist"],
-  RightUpperLeg: ["right_hip", "right_knee"],
-  RightLowerLeg: ["right_knee", "right_ankle"],
-  LeftUpperLeg: ["left_hip", "left_knee"],
-  LeftLowerLeg: ["left_knee", "left_ankle"],
+  RightUpperArm: ["left_shoulder", "left_elbow"],
+  RightLowerArm: ["left_elbow", "left_wrist"],
+  LeftUpperArm: ["right_shoulder", "right_elbow"],
+  LeftLowerArm: ["right_elbow", "right_wrist"],
+  RightHand: ["left_wrist"],
+  LeftHand: ["right_wrist"],
+  RightUpperLeg: ["left_hip", "left_knee"],
+  RightLowerLeg: ["left_knee", "left_ankle"],
+  LeftUpperLeg: ["right_hip", "right_knee"],
+  LeftLowerLeg: ["right_knee", "right_ankle"],
   Spine: ["left_shoulder", "right_shoulder", "left_hip", "right_hip"],
   Hips: ["left_hip", "right_hip"],
 };
@@ -72,26 +98,28 @@ export class AvatarRetargetController {
 
   public registerAsset(
     assetIdValue: string,
-    templateJson: string,
+    vrmUrlValue: string,
     rigJson: string,
   ): void {
     const assetId = identifier(assetIdValue, "avatar asset ID");
-    parseJsonObject(templateJson, "Avatar template JSON");
+    const vrmUrl = nonEmpty(vrmUrlValue, "VRM URL");
+    if (vrmUrl.length > 2048)
+      throw new Error("VRM URL exceeds 2048 characters.");
     const rig = parseRigMapping(rigJson);
-    const aframe = requireAFramePublicBlocks(this.runtime);
+    const aframe = requireAFrameCapability(this.runtime);
     const templateId = `twmp-avatar-${assetId}`;
-    aframe.loadTemplate(templateId, templateJson);
-    this.assets.set(assetId, { id: assetId, templateId, rig });
+    aframe.loadTemplate(templateId, HOLDER_TEMPLATE);
+    this.assets.set(assetId, { id: assetId, templateId, vrmUrl, rig });
     this.succeed("configured");
   }
 
-  public bind(
+  public async bind(
     personIdValue: string,
     instanceIdValue: string,
     assetIdValue: string,
     parentSelectorValue: string,
     confidenceValue: number,
-  ): void {
+  ): Promise<void> {
     const personId = identifier(personIdValue, "person ID");
     const instanceId = identifier(instanceIdValue, "avatar instance ID");
     const assetId = identifier(assetIdValue, "avatar asset ID");
@@ -109,7 +137,7 @@ export class AvatarRetargetController {
     if (!existingPerson && this.bindings.size >= 6) {
       throw new Error("Avatar retargeting supports at most six people.");
     }
-    const aframe = requireAFramePublicBlocks(this.runtime);
+    const aframe = requireAFrameCapability(this.runtime);
     if (
       instanceId !== existingPerson?.instanceId &&
       aframe.countSelector(`#${instanceId}`) > 0
@@ -121,13 +149,30 @@ export class AvatarRetargetController {
       throw new Error(`A-Frame node already exists: ${instanceId}`);
     }
     aframe.createFromTemplate(asset.templateId, instanceId, parentSelector);
-    this.bindings.set(personId, {
+    const binding: AvatarBinding = {
       personId,
       instanceId,
       assetId,
       confidence,
       recognized: false,
-    });
+      loaded: false,
+    };
+    this.bindings.set(personId, binding);
+    this.lastState = "loading";
+    try {
+      await aframe.loadVrm(asset.vrmUrl, `#${instanceId}`);
+    } catch (error) {
+      if (this.bindings.get(personId) === binding) {
+        this.bindings.delete(personId);
+        aframe.deleteSelector(`#${instanceId}`);
+        this.lastState = "error";
+        this.lastError = `${personId}: ${message(error)}`;
+      }
+      throw error;
+    }
+    // A rebind, unbind, or reset during the load has already replaced this binding.
+    if (this.bindings.get(personId) !== binding) return;
+    binding.loaded = true;
     this.succeed("bound");
   }
 
@@ -135,7 +180,7 @@ export class AvatarRetargetController {
     const personId = identifier(personIdValue, "person ID");
     const binding = this.bindings.get(personId);
     if (!binding) return;
-    this.removeBinding(requireAFramePublicBlocks(this.runtime), binding);
+    this.removeBinding(requireAFrameCapability(this.runtime), binding);
     this.succeed("configured");
   }
 
@@ -144,11 +189,11 @@ export class AvatarRetargetController {
     this.lastError = "";
     let frame: PoseFrame3D;
     let pose2d: PoseFrame2D;
-    let aframe: AFramePublicBlockPort;
+    let aframe: AFrameCapabilityPort;
     try {
       frame = parseFrame(frameJson);
       pose2d = parsePoseFrame2D(pose2dJson);
-      aframe = requireAFramePublicBlocks(this.runtime);
+      aframe = requireAFrameCapability(this.runtime);
     } catch (error) {
       this.lastState = "error";
       this.lastError = message(error);
@@ -162,6 +207,7 @@ export class AvatarRetargetController {
     );
     const errors: string[] = [];
     for (const binding of [...this.bindings.values()]) {
+      if (!binding.loaded) continue;
       try {
         if (aframe.countSelector(`#${binding.instanceId}`) !== 1) {
           this.bindings.delete(binding.personId);
@@ -200,7 +246,7 @@ export class AvatarRetargetController {
     const candidate = this.runtime.turbowarpAFrameCapability;
     if (typeof candidate === "object" && candidate !== null) {
       try {
-        const aframe = requireAFramePublicBlocks(this.runtime);
+        const aframe = requireAFrameCapability(this.runtime);
         for (const binding of [...this.bindings.values()]) {
           this.removeBinding(aframe, binding);
         }
@@ -232,7 +278,7 @@ export class AvatarRetargetController {
   }
 
   private applyPerson(
-    aframe: AFramePublicBlockPort,
+    aframe: AFrameCapabilityPort,
     binding: AvatarBinding,
     person: PoseFrame3DPerson,
     screenPerson: PoseFrame2DPerson,
@@ -266,11 +312,11 @@ export class AvatarRetargetController {
         root.z * asset.rig.rootScale + offsetZ,
       );
     }
-    for (const bone of asset.rig.bones) {
+    for (const key of KALIDOKIT_RIG_KEYS) {
       this.applyBone(
         aframe,
         binding,
-        bone,
+        key,
         rig,
         worldKeypoints,
         screenKeypoints,
@@ -279,9 +325,9 @@ export class AvatarRetargetController {
   }
 
   private applyBone(
-    aframe: AFramePublicBlockPort,
+    aframe: AFrameCapabilityPort,
     binding: AvatarBinding,
-    bone: AvatarRigBone,
+    key: KalidokitRigKey,
     rig: KalidokitPoseRig,
     worldKeypoints: ReadonlyMap<string, PoseFrame3DKeypoint>,
     screenKeypoints: ReadonlyMap<
@@ -290,7 +336,7 @@ export class AvatarRetargetController {
     >,
   ): void {
     if (
-      !requiredJoints(bone.rig).every(
+      !requiredJoints(key).every(
         (id) =>
           (worldKeypoints.get(id)?.score ?? 0) >= binding.confidence &&
           (screenKeypoints.get(id)?.score ?? 0) >= binding.confidence,
@@ -298,22 +344,18 @@ export class AvatarRetargetController {
     ) {
       return;
     }
-    const selector = expandSelector(bone.selector, binding.instanceId);
-    if (aframe.countSelector(selector) !== 1) {
-      throw new Error(`Rig selector must match exactly one node: ${selector}`);
-    }
-    const rotation = rotationForRig(rig, bone.rig);
-    const [offsetX, offsetY, offsetZ] = bone.offsetDegrees;
-    aframe.setRotation(
-      selector,
-      radiansToDegrees(rotation.x) + offsetX,
-      radiansToDegrees(rotation.y) + offsetY,
-      radiansToDegrees(rotation.z) + offsetZ,
+    const [x, y, z] = vrmBoneDegrees(rotationForRig(rig, key));
+    aframe.setVrmBoneRotation(
+      `#${binding.instanceId}`,
+      VRM_BONES[key],
+      x,
+      y,
+      z,
     );
   }
 
   private setRecognized(
-    aframe: AFramePublicBlockPort,
+    aframe: AFrameCapabilityPort,
     binding: AvatarBinding,
     recognized: boolean,
     timestampUs: number | undefined,
@@ -336,7 +378,7 @@ export class AvatarRetargetController {
   }
 
   private removeBinding(
-    aframe: AFramePublicBlockPort,
+    aframe: AFrameCapabilityPort,
     binding: AvatarBinding,
     timestampUs?: number,
   ): void {
@@ -375,12 +417,16 @@ function parsePoseFrame2D(source: string): PoseFrame2D {
 
 function parseRigMapping(source: string): AvatarRigMapping {
   const value = parseJsonObject(source, "Avatar rig mapping JSON");
+  if ("bones" in value) {
+    throw new Error(
+      "Rig mapping no longer takes bones: VRM humanoid bones are driven directly.",
+    );
+  }
   const allowed = new Set([
     "rootScale",
     "rootOffset",
     "recognitionStartEvent",
     "recognitionEndEvent",
-    "bones",
   ]);
   rejectUnknownKeys(value, allowed, "rig mapping");
   const rootScale = finite(value.rootScale ?? 1, "rootScale");
@@ -394,41 +440,11 @@ function parseRigMapping(source: string): AvatarRigMapping {
     value.recognitionEndEvent ?? "twmp-recognition-end",
     "recognitionEndEvent",
   );
-  if (
-    !Array.isArray(value.bones) ||
-    value.bones.length === 0 ||
-    value.bones.length > 32
-  ) {
-    throw new Error("Rig mapping bones must contain between 1 and 32 entries.");
-  }
-  const bones = value.bones.map((entry, index) => parseBone(entry, index));
   return {
     rootScale,
     rootOffset,
     recognitionStartEvent,
     recognitionEndEvent,
-    bones,
-  };
-}
-
-function parseBone(value: unknown, index: number): AvatarRigBone {
-  const bone = record(value, `bones[${index}]`);
-  rejectUnknownKeys(
-    bone,
-    new Set(["selector", "rig", "offsetDegrees"]),
-    `bones[${index}]`,
-  );
-  const selector = nonEmpty(bone.selector, `bones[${index}].selector`);
-  if (!selector.includes("{avatar}")) {
-    throw new Error(`bones[${index}].selector must contain {avatar}.`);
-  }
-  return {
-    selector,
-    rig: rigKey(bone.rig, `bones[${index}].rig`),
-    offsetDegrees: vector3(
-      bone.offsetDegrees ?? [0, 0, 0],
-      `bones[${index}].offsetDegrees`,
-    ),
   };
 }
 
@@ -460,16 +476,6 @@ function rejectUnknownKeys(
 ): void {
   const unknown = Object.keys(value).find((key) => !allowed.has(key));
   if (unknown) throw new Error(`${label} contains unknown field: ${unknown}`);
-}
-
-function rigKey(value: unknown, label: string): KalidokitRigKey {
-  if (
-    typeof value !== "string" ||
-    !KALIDOKIT_RIG_KEY_SET.has(value as KalidokitRigKey)
-  ) {
-    throw new Error(`${label} must be a supported Kalidokit pose rig key.`);
-  }
-  return value as KalidokitRigKey;
 }
 
 function vector3(value: unknown, label: string): [number, number, number] {
@@ -516,8 +522,24 @@ function eventName(value: unknown, label: string): string {
   return normalized;
 }
 
-function expandSelector(selector: string, instanceId: string): string {
-  return selector.replaceAll("{avatar}", instanceId);
+/**
+ * Converts a Kalidokit rotation in radians to Euler degrees on a VRM normalized bone.
+ *
+ * Kalidokit's rotations are for VRM 0.x bone axes, which face -Z; normalized bones use the
+ * VRM 1.0 axes, a half turn about Y away, which negates x and z. Driving the opposite side
+ * (see VRM_BONES) also mirrors the rotation across the body's midline, which negates y and z.
+ * Together the signs become (-x, -y, z).
+ */
+function vrmBoneDegrees(rotation: {
+  x: number;
+  y: number;
+  z: number;
+}): [number, number, number] {
+  return [
+    -radiansToDegrees(rotation.x),
+    -radiansToDegrees(rotation.y),
+    radiansToDegrees(rotation.z),
+  ];
 }
 
 function radiansToDegrees(value: number): number {

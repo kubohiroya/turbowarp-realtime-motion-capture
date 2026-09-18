@@ -154,23 +154,34 @@ camera/board geometry and WebAssembly startup remain browser E2E responsibilitie
 ## PoseFrame3D avatar retargeting
 
 `avatarRetargetV1` is an independent startup-fixed, default-OFF flag. It requires runtime key
-`turbowarpAFrameCapability`, calls `requireVersion(1)`, and uses only the seven public synchronous
-scene operations from the TurboWarp-A-Frame capability. The consumer never accesses A-Frame DOM,
-Three.js `object3D`, or GLTF bone internals. Capability v1 is published in
-`@kubohiroya/turbowarp-aframe@0.3.0`.
+`turbowarpAFrameCapability` and calls `requireVersion(2)`; it accepts no other version, so an
+A-Frame build without capability v2, such as 0.3.0, is refused. It uses the public scene
+operations and the VRM operations of that capability, and never accesses A-Frame DOM, Three.js
+objects, or GLTF internals. Capability v2 is published in `@kubohiroya/turbowarp-aframe@0.4.0`.
 
-An asset registration sends declarative template JSON to A-Frame and retains a validated rig map.
-Each bone maps one supported Kalidokit pose rig output to a selector containing `{avatar}`, plus
-optional Euler offset degrees. Applying a frame requires corresponding exact-v1 PoseFrame3D and
-PoseFrame2D values. A person is joined only by PoseFrame3D `personId` equal to PoseFrame2D
-`trackingId`; this is not temporal alignment.
+An asset registration records a VRM URL and a validated root placement. Binding a person creates
+an empty node from a holder template, loads the VRM onto it, and waits until it is ready; a failed
+load removes the node and the binding. Applying a frame requires corresponding exact-v1
+PoseFrame3D and PoseFrame2D values. A person is joined only by PoseFrame3D `personId` equal to
+PoseFrame2D `trackingId`; this is not temporal alignment.
 
 The adapter maps both COCO-17 records deterministically to the 33 positions required by
 exact-pinned `kalidokit@1.1.5`. Screen coordinates use PoseFrame2D `frameWidth` and `frameHeight`;
 world coordinates retain the external service coordinate values. Missing BlazePose face, hand, and
 foot points are midpoint-interpolated or duplicated with reduced visibility. Kalidokit `Pose.solve`
-with `runtime: "tfjs"` and `enableLegs: true` is the sole rotation solver. Its radians are converted
-to A-Frame degrees, and its hips result drives the configured root scale and offset. There is no
+with `runtime: "tfjs"` and `enableLegs: true` is the sole rotation solver. Its hips result drives
+the configured root scale and offset.
+
+Kalidokit solves a mirrored selfie view for VRM 0.x bone axes. Its `Right*` outputs come from the
+performer's left landmarks, so each output turns the opposite VRM humanoid bone, which moves the
+performer's own side. The rotation is written in degrees to the normalized bone: normalized bones
+use the VRM 1.0 axes, a half turn about Y from VRM 0.x, which negates x and z, and driving the
+opposite side mirrors the rotation across the midline, which negates y and z; together the signs
+become (-x, -y, z). This was checked on a VRM with Kalidokit 1.1.5 and synthetic poses: an arm
+lowered 30°, one arm held level, a raised knee, and a forearm reaching forward each moved the
+performer's own limb in the same direction. Kalidokit's arm output barely separates an arm raised
+above level from one lowered below it, and it reported no spine lean for a leaning torso, so the
+spine and hips signs follow from the same derivation but are not yet observed. There is no
 custom rotation fallback. Joint or person confidence below the binding threshold skips only that
 transform and preserves its prior value.
 
@@ -184,7 +195,7 @@ PoseFrame3D is exact v1 boundary data from a separate 3D service. Its `timestamp
 only copied into recognition event data. This extension performs no frame alignment, history
 retention/query, triangulation, or 3D solve. Kalidokit is deprecated upstream and expects native
 BlazePose landmarks; the deterministic COCO-17 expansion is therefore an explicit accuracy
-constraint, and intended GLTF rigs require real-browser validation before release.
+constraint, and retargeting still requires validation with real recordings before release.
 
 ## Frame sync pattern vertical slice
 

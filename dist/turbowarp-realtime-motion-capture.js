@@ -541,20 +541,20 @@
   			"opcode": "registerAvatarAsset",
   			"feature": "avatarRetargetV1",
   			"blockType": "COMMAND",
-  			"text": "register avatar asset [ASSET_ID] template JSON [TEMPLATE_JSON] rig JSON [RIG_JSON]",
-  			"description": "Registers an A-Frame 0.3.0 template and its Kalidokit rig-output selector mapping.",
+  			"text": "register avatar asset [ASSET_ID] VRM [VRM_URL] rig JSON [RIG_JSON]",
+  			"description": "Registers a VRM model and its root placement for avatars driven through TurboWarp-A-Frame capability v2.",
   			"arguments": {
   				"ASSET_ID": {
   					"type": "STRING",
   					"defaultValue": "actor"
   				},
-  				"TEMPLATE_JSON": {
+  				"VRM_URL": {
   					"type": "STRING",
-  					"defaultValue": "{\"type\":\"group\",\"children\":[]}"
+  					"defaultValue": "avatar.vrm"
   				},
   				"RIG_JSON": {
   					"type": "STRING",
-  					"defaultValue": "{\"bones\":[{\"selector\":\"#{avatar}-left-arm\",\"rig\":\"LeftUpperArm\"}]}"
+  					"defaultValue": "{\"rootScale\":1,\"rootOffset\":[0,0,0]}"
   				}
   			}
   		},
@@ -563,7 +563,7 @@
   			"feature": "avatarRetargetV1",
   			"blockType": "COMMAND",
   			"text": "bind person [PERSON_ID] to avatar [INSTANCE_ID] asset [ASSET_ID] under [PARENT] confidence [CONFIDENCE]",
-  			"description": "Creates an avatar instance and binds one PoseFrame3D person ID to it.",
+  			"description": "Creates an avatar instance, loads its VRM, and binds one PoseFrame3D person ID to it. The block waits until the VRM is ready.",
   			"arguments": {
   				"PERSON_ID": {
   					"type": "STRING",
@@ -78248,19 +78248,33 @@
   	"loadTemplate",
   	"createFromTemplate",
   	"setPosition",
-  	"setRotation",
   	"emitEvent",
   	"deleteSelector",
   	"countSelector",
+  	"loadVrm",
+  	"setVrmBoneRotation",
   	"requireVersion"
   ];
-  function requireAFramePublicBlocks(runtime) {
+  /**
+  * Returns TurboWarp-A-Frame capability v2, the only version avatar retargeting accepts.
+  * A build that cannot provide v2 is refused rather than driven through an older contract.
+  */
+  function requireAFrameCapability(runtime) {
   	const candidate = runtime[AFRAME_CAPABILITY_KEY];
-  	if (typeof candidate !== "object" || candidate === null) throw new Error("TurboWarp-A-Frame capability v1 must be loaded before avatar retargeting.");
-  	for (const method of METHODS) if (typeof Reflect.get(candidate, method) !== "function") throw new Error(`TurboWarp-A-Frame capability v1 is missing ${method}().`);
-  	const capability = candidate;
-  	if (capability.version !== 1) throw new Error(`TurboWarp-A-Frame capability v1 is required; found version ${String(capability.version)}.`);
-  	return capability.requireVersion(1);
+  	if (typeof candidate !== "object" || candidate === null) throw new Error("TurboWarp-A-Frame capability v2 must be loaded before avatar retargeting.");
+  	const requireVersion = Reflect.get(candidate, "requireVersion");
+  	if (typeof requireVersion !== "function") throw new Error("TurboWarp-A-Frame capability v2 is missing requireVersion().");
+  	let capability;
+  	try {
+  		capability = requireVersion.call(candidate, 2);
+  	} catch (error) {
+  		throw new Error(`TurboWarp-A-Frame capability v2 is required: ${error instanceof Error ? error.message : String(error)}`);
+  	}
+  	if (typeof capability !== "object" || capability === null) throw new Error("TurboWarp-A-Frame capability v2 is required.");
+  	for (const method of METHODS) if (typeof Reflect.get(capability, method) !== "function") throw new Error(`TurboWarp-A-Frame capability v2 is missing ${method}().`);
+  	const version = Reflect.get(capability, "version");
+  	if (version !== 2) throw new Error(`TurboWarp-A-Frame capability v2 is required; found version ${String(version)}.`);
+  	return capability;
   }
   //#endregion
   //#region node_modules/.pnpm/kalidokit@1.1.5/node_modules/kalidokit/dist/utils/helpers.js
@@ -79815,18 +79829,42 @@
   //#region src/avatar/controller.ts
   var identifiers = /^[A-Za-z0-9._-]{1,64}$/u;
   var eventNames = /^[A-Za-z0-9._:-]{1,80}$/u;
-  var KALIDOKIT_RIG_KEY_SET = new Set(KALIDOKIT_RIG_KEYS);
+  /** Every avatar instance is an empty node that the VRM is loaded onto. */
+  var HOLDER_TEMPLATE = JSON.stringify({ type: "empty" });
+  /**
+  * Kalidokit solves a mirrored selfie view: its `Right*` outputs come from the performer's
+  * left landmarks. A stage avatar moves the performer's own side, so each output drives the
+  * opposite VRM humanoid bone.
+  */
+  var VRM_BONES = {
+  	RightUpperArm: "leftUpperArm",
+  	RightLowerArm: "leftLowerArm",
+  	LeftUpperArm: "rightUpperArm",
+  	LeftLowerArm: "rightLowerArm",
+  	RightHand: "leftHand",
+  	LeftHand: "rightHand",
+  	RightUpperLeg: "leftUpperLeg",
+  	RightLowerLeg: "leftLowerLeg",
+  	LeftUpperLeg: "rightUpperLeg",
+  	LeftLowerLeg: "rightLowerLeg",
+  	Spine: "spine",
+  	Hips: "hips"
+  };
+  /**
+  * The joints each Kalidokit output is computed from. Its `Right*` outputs read the
+  * performer's left landmarks (BlazePose 11, 13, 15, 23, 25, 27), and `Left*` the right.
+  */
   var RIG_REQUIRED_JOINTS = {
-  	RightUpperArm: ["right_shoulder", "right_elbow"],
-  	RightLowerArm: ["right_elbow", "right_wrist"],
-  	LeftUpperArm: ["left_shoulder", "left_elbow"],
-  	LeftLowerArm: ["left_elbow", "left_wrist"],
-  	RightHand: ["right_wrist"],
-  	LeftHand: ["left_wrist"],
-  	RightUpperLeg: ["right_hip", "right_knee"],
-  	RightLowerLeg: ["right_knee", "right_ankle"],
-  	LeftUpperLeg: ["left_hip", "left_knee"],
-  	LeftLowerLeg: ["left_knee", "left_ankle"],
+  	RightUpperArm: ["left_shoulder", "left_elbow"],
+  	RightLowerArm: ["left_elbow", "left_wrist"],
+  	LeftUpperArm: ["right_shoulder", "right_elbow"],
+  	LeftLowerArm: ["right_elbow", "right_wrist"],
+  	RightHand: ["left_wrist"],
+  	LeftHand: ["right_wrist"],
+  	RightUpperLeg: ["left_hip", "left_knee"],
+  	RightLowerLeg: ["left_knee", "left_ankle"],
+  	LeftUpperLeg: ["right_hip", "right_knee"],
+  	LeftLowerLeg: ["right_knee", "right_ankle"],
   	Spine: [
   		"left_shoulder",
   		"right_shoulder",
@@ -79845,21 +79883,23 @@
   		this.runtime = runtime;
   		this.solver = solver;
   	}
-  	registerAsset(assetIdValue, templateJson, rigJson) {
+  	registerAsset(assetIdValue, vrmUrlValue, rigJson) {
   		const assetId = identifier(assetIdValue, "avatar asset ID");
-  		parseJsonObject(templateJson, "Avatar template JSON");
+  		const vrmUrl = nonEmpty(vrmUrlValue, "VRM URL");
+  		if (vrmUrl.length > 2048) throw new Error("VRM URL exceeds 2048 characters.");
   		const rig = parseRigMapping(rigJson);
-  		const aframe = requireAFramePublicBlocks(this.runtime);
+  		const aframe = requireAFrameCapability(this.runtime);
   		const templateId = `twmp-avatar-${assetId}`;
-  		aframe.loadTemplate(templateId, templateJson);
+  		aframe.loadTemplate(templateId, HOLDER_TEMPLATE);
   		this.assets.set(assetId, {
   			id: assetId,
   			templateId,
+  			vrmUrl,
   			rig
   		});
   		this.succeed("configured");
   	}
-  	bind(personIdValue, instanceIdValue, assetIdValue, parentSelectorValue, confidenceValue) {
+  	async bind(personIdValue, instanceIdValue, assetIdValue, parentSelectorValue, confidenceValue) {
   		const personId = identifier(personIdValue, "person ID");
   		const instanceId = identifier(instanceIdValue, "avatar instance ID");
   		const assetId = identifier(assetIdValue, "avatar asset ID");
@@ -79871,25 +79911,41 @@
   		const existingInstance = [...this.bindings.values()].find((binding) => binding.instanceId === instanceId);
   		if (existingInstance && existingInstance.personId !== personId) throw new Error(`Avatar instance is already bound: ${instanceId}`);
   		if (!existingPerson && this.bindings.size >= 6) throw new Error("Avatar retargeting supports at most six people.");
-  		const aframe = requireAFramePublicBlocks(this.runtime);
+  		const aframe = requireAFrameCapability(this.runtime);
   		if (instanceId !== existingPerson?.instanceId && aframe.countSelector(`#${instanceId}`) > 0) throw new Error(`A-Frame node already exists: ${instanceId}`);
   		if (existingPerson) this.removeBinding(aframe, existingPerson);
   		if (aframe.countSelector(`#${instanceId}`) > 0) throw new Error(`A-Frame node already exists: ${instanceId}`);
   		aframe.createFromTemplate(asset.templateId, instanceId, parentSelector);
-  		this.bindings.set(personId, {
+  		const binding = {
   			personId,
   			instanceId,
   			assetId,
   			confidence,
-  			recognized: false
-  		});
+  			recognized: false,
+  			loaded: false
+  		};
+  		this.bindings.set(personId, binding);
+  		this.lastState = "loading";
+  		try {
+  			await aframe.loadVrm(asset.vrmUrl, `#${instanceId}`);
+  		} catch (error) {
+  			if (this.bindings.get(personId) === binding) {
+  				this.bindings.delete(personId);
+  				aframe.deleteSelector(`#${instanceId}`);
+  				this.lastState = "error";
+  				this.lastError = `${personId}: ${message(error)}`;
+  			}
+  			throw error;
+  		}
+  		if (this.bindings.get(personId) !== binding) return;
+  		binding.loaded = true;
   		this.succeed("bound");
   	}
   	unbind(personIdValue) {
   		const personId = identifier(personIdValue, "person ID");
   		const binding = this.bindings.get(personId);
   		if (!binding) return;
-  		this.removeBinding(requireAFramePublicBlocks(this.runtime), binding);
+  		this.removeBinding(requireAFrameCapability(this.runtime), binding);
   		this.succeed("configured");
   	}
   	apply(frameJson, pose2dJson) {
@@ -79901,7 +79957,7 @@
   		try {
   			frame = parseFrame(frameJson);
   			pose2d = parsePoseFrame2D(pose2dJson);
-  			aframe = requireAFramePublicBlocks(this.runtime);
+  			aframe = requireAFrameCapability(this.runtime);
   		} catch (error) {
   			this.lastState = "error";
   			this.lastError = message(error);
@@ -79910,23 +79966,26 @@
   		const people = new Map(frame.persons.map((person) => [person.personId, person]));
   		const screenPeople = new Map(pose2d.persons.map((person) => [person.trackingId, person]));
   		const errors = [];
-  		for (const binding of [...this.bindings.values()]) try {
-  			if (aframe.countSelector(`#${binding.instanceId}`) !== 1) {
-  				this.bindings.delete(binding.personId);
-  				errors.push(`${binding.personId}: avatar instance is missing after scene reset`);
-  				continue;
+  		for (const binding of [...this.bindings.values()]) {
+  			if (!binding.loaded) continue;
+  			try {
+  				if (aframe.countSelector(`#${binding.instanceId}`) !== 1) {
+  					this.bindings.delete(binding.personId);
+  					errors.push(`${binding.personId}: avatar instance is missing after scene reset`);
+  					continue;
+  				}
+  				const person = people.get(binding.personId);
+  				const screenPerson = screenPeople.get(binding.personId);
+  				if (!person || !screenPerson || person.score < binding.confidence || screenPerson.score < binding.confidence) {
+  					this.setRecognized(aframe, binding, false, frame.timestampUs);
+  					continue;
+  				}
+  				this.applyPerson(aframe, binding, person, screenPerson, pose2d);
+  				this.setRecognized(aframe, binding, true, frame.timestampUs);
+  				this.lastUpdated += 1;
+  			} catch (error) {
+  				errors.push(`${binding.personId}: ${message(error)}`);
   			}
-  			const person = people.get(binding.personId);
-  			const screenPerson = screenPeople.get(binding.personId);
-  			if (!person || !screenPerson || person.score < binding.confidence || screenPerson.score < binding.confidence) {
-  				this.setRecognized(aframe, binding, false, frame.timestampUs);
-  				continue;
-  			}
-  			this.applyPerson(aframe, binding, person, screenPerson, pose2d);
-  			this.setRecognized(aframe, binding, true, frame.timestampUs);
-  			this.lastUpdated += 1;
-  		} catch (error) {
-  			errors.push(`${binding.personId}: ${message(error)}`);
   		}
   		if (errors.length > 0) {
   			this.lastState = "partial";
@@ -79936,7 +79995,7 @@
   	reset() {
   		const candidate = this.runtime.turbowarpAFrameCapability;
   		if (typeof candidate === "object" && candidate !== null) try {
-  			const aframe = requireAFramePublicBlocks(this.runtime);
+  			const aframe = requireAFrameCapability(this.runtime);
   			for (const binding of [...this.bindings.values()]) this.removeBinding(aframe, binding);
   		} catch {
   			this.bindings.clear();
@@ -79973,15 +80032,12 @@
   			const [offsetX, offsetY, offsetZ] = asset.rig.rootOffset;
   			aframe.setPosition(`#${binding.instanceId}`, root.x * asset.rig.rootScale + offsetX, root.y * asset.rig.rootScale + offsetY, root.z * asset.rig.rootScale + offsetZ);
   		}
-  		for (const bone of asset.rig.bones) this.applyBone(aframe, binding, bone, rig, worldKeypoints, screenKeypoints);
+  		for (const key of KALIDOKIT_RIG_KEYS) this.applyBone(aframe, binding, key, rig, worldKeypoints, screenKeypoints);
   	}
-  	applyBone(aframe, binding, bone, rig, worldKeypoints, screenKeypoints) {
-  		if (!requiredJoints(bone.rig).every((id) => (worldKeypoints.get(id)?.score ?? 0) >= binding.confidence && (screenKeypoints.get(id)?.score ?? 0) >= binding.confidence)) return;
-  		const selector = expandSelector(bone.selector, binding.instanceId);
-  		if (aframe.countSelector(selector) !== 1) throw new Error(`Rig selector must match exactly one node: ${selector}`);
-  		const rotation = rotationForRig(rig, bone.rig);
-  		const [offsetX, offsetY, offsetZ] = bone.offsetDegrees;
-  		aframe.setRotation(selector, radiansToDegrees(rotation.x) + offsetX, radiansToDegrees(rotation.y) + offsetY, radiansToDegrees(rotation.z) + offsetZ);
+  	applyBone(aframe, binding, key, rig, worldKeypoints, screenKeypoints) {
+  		if (!requiredJoints(key).every((id) => (worldKeypoints.get(id)?.score ?? 0) >= binding.confidence && (screenKeypoints.get(id)?.score ?? 0) >= binding.confidence)) return;
+  		const [x, y, z] = vrmBoneDegrees(rotationForRig(rig, key));
+  		aframe.setVrmBoneRotation(`#${binding.instanceId}`, VRM_BONES[key], x, y, z);
   	}
   	setRecognized(aframe, binding, recognized, timestampUs) {
   		if (binding.recognized === recognized) return;
@@ -80022,48 +80078,24 @@
   }
   function parseRigMapping(source) {
   	const value = parseJsonObject(source, "Avatar rig mapping JSON");
+  	if ("bones" in value) throw new Error("Rig mapping no longer takes bones: VRM humanoid bones are driven directly.");
   	rejectUnknownKeys(value, /* @__PURE__ */ new Set([
   		"rootScale",
   		"rootOffset",
   		"recognitionStartEvent",
-  		"recognitionEndEvent",
-  		"bones"
+  		"recognitionEndEvent"
   	]), "rig mapping");
   	const rootScale = finite(value.rootScale ?? 1, "rootScale");
   	if (rootScale <= 0) throw new Error("rootScale must be greater than zero.");
-  	const rootOffset = vector3(value.rootOffset ?? [
-  		0,
-  		0,
-  		0
-  	], "rootOffset");
-  	const recognitionStartEvent = eventName(value.recognitionStartEvent ?? "twmp-recognition-start", "recognitionStartEvent");
-  	const recognitionEndEvent = eventName(value.recognitionEndEvent ?? "twmp-recognition-end", "recognitionEndEvent");
-  	if (!Array.isArray(value.bones) || value.bones.length === 0 || value.bones.length > 32) throw new Error("Rig mapping bones must contain between 1 and 32 entries.");
   	return {
   		rootScale,
-  		rootOffset,
-  		recognitionStartEvent,
-  		recognitionEndEvent,
-  		bones: value.bones.map((entry, index) => parseBone(entry, index))
-  	};
-  }
-  function parseBone(value, index) {
-  	const bone = record(value, `bones[${index}]`);
-  	rejectUnknownKeys(bone, /* @__PURE__ */ new Set([
-  		"selector",
-  		"rig",
-  		"offsetDegrees"
-  	]), `bones[${index}]`);
-  	const selector = nonEmpty(bone.selector, `bones[${index}].selector`);
-  	if (!selector.includes("{avatar}")) throw new Error(`bones[${index}].selector must contain {avatar}.`);
-  	return {
-  		selector,
-  		rig: rigKey(bone.rig, `bones[${index}].rig`),
-  		offsetDegrees: vector3(bone.offsetDegrees ?? [
+  		rootOffset: vector3(value.rootOffset ?? [
   			0,
   			0,
   			0
-  		], `bones[${index}].offsetDegrees`)
+  		], "rootOffset"),
+  		recognitionStartEvent: eventName(value.recognitionStartEvent ?? "twmp-recognition-start", "recognitionStartEvent"),
+  		recognitionEndEvent: eventName(value.recognitionEndEvent ?? "twmp-recognition-end", "recognitionEndEvent")
   	};
   }
   function parseJsonObject(source, label) {
@@ -80082,10 +80114,6 @@
   function rejectUnknownKeys(value, allowed, label) {
   	const unknown = Object.keys(value).find((key) => !allowed.has(key));
   	if (unknown) throw new Error(`${label} contains unknown field: ${unknown}`);
-  }
-  function rigKey(value, label) {
-  	if (typeof value !== "string" || !KALIDOKIT_RIG_KEY_SET.has(value)) throw new Error(`${label} must be a supported Kalidokit pose rig key.`);
-  	return value;
   }
   function vector3(value, label) {
   	if (!Array.isArray(value) || value.length !== 3) throw new Error(`${label} must contain exactly three numbers.`);
@@ -80117,8 +80145,20 @@
   	if (!eventNames.test(normalized)) throw new Error(`Invalid ${label}.`);
   	return normalized;
   }
-  function expandSelector(selector, instanceId) {
-  	return selector.replaceAll("{avatar}", instanceId);
+  /**
+  * Converts a Kalidokit rotation in radians to Euler degrees on a VRM normalized bone.
+  *
+  * Kalidokit's rotations are for VRM 0.x bone axes, which face -Z; normalized bones use the
+  * VRM 1.0 axes, a half turn about Y away, which negates x and z. Driving the opposite side
+  * (see VRM_BONES) also mirrors the rotation across the body's midline, which negates y and z.
+  * Together the signs become (-x, -y, z).
+  */
+  function vrmBoneDegrees(rotation) {
+  	return [
+  		-radiansToDegrees(rotation.x),
+  		-radiansToDegrees(rotation.y),
+  		radiansToDegrees(rotation.z)
+  	];
   }
   function radiansToDegrees(value) {
   	return value * 180 / Math.PI;
@@ -82954,11 +82994,11 @@
   	}
   	registerAvatarAsset(args) {
   		this.requireAvatarEnabled();
-  		this.avatar.registerAsset(Scratch.Cast.toString(args.ASSET_ID), Scratch.Cast.toString(args.TEMPLATE_JSON), Scratch.Cast.toString(args.RIG_JSON));
+  		this.avatar.registerAsset(Scratch.Cast.toString(args.ASSET_ID), Scratch.Cast.toString(args.VRM_URL), Scratch.Cast.toString(args.RIG_JSON));
   	}
   	bindAvatarPerson(args) {
   		this.requireAvatarEnabled();
-  		this.avatar.bind(Scratch.Cast.toString(args.PERSON_ID), Scratch.Cast.toString(args.INSTANCE_ID), Scratch.Cast.toString(args.ASSET_ID), Scratch.Cast.toString(args.PARENT), Scratch.Cast.toNumber(args.CONFIDENCE));
+  		return this.avatar.bind(Scratch.Cast.toString(args.PERSON_ID), Scratch.Cast.toString(args.INSTANCE_ID), Scratch.Cast.toString(args.ASSET_ID), Scratch.Cast.toString(args.PARENT), Scratch.Cast.toNumber(args.CONFIDENCE));
   	}
   	unbindAvatarPerson(args) {
   		this.requireAvatarEnabled();
