@@ -39,7 +39,7 @@ export class KalidokitPoseAdapter implements AvatarPoseSolverPort {
       throw new Error("Kalidokit image size must contain positive integers.");
     }
     rejectDegenerateWorldPose(worldPerson);
-    const world = blazePose33(worldPerson.keypoints, "world");
+    const world = blazePose33(hipCentred(worldPerson.keypoints), "world");
     const screen = blazePose33(screenPerson.keypoints, "screen");
     const result = this.solver.solve(world, screen, {
       runtime: "tfjs",
@@ -68,6 +68,29 @@ function rejectDegenerateWorldPose(person: PoseFrame3DPerson): void {
   ) {
     throw new Error("Kalidokit cannot solve a degenerate world pose.");
   }
+}
+
+/**
+ * Kalidokit reads world landmarks as MediaPipe gives them, centred between the hips: a wrist or
+ * hip more than 0.1 below that centre counts as off screen and its limb falls back to rest. A
+ * PoseFrame3D from several cameras is in the room's frame, where every joint lies far from the
+ * origin, so it is moved to the hips first. Rotations do not depend on where the origin is.
+ */
+function hipCentred(
+  keypoints: PoseFrame3DPerson["keypoints"],
+): PoseFrame3DPerson["keypoints"] {
+  const left = keypoints.find((point) => point.id === "left_hip");
+  const right = keypoints.find((point) => point.id === "right_hip");
+  if (!left || !right) return keypoints;
+  const x = (left.x + right.x) / 2;
+  const y = (left.y + right.y) / 2;
+  const z = (left.z + right.z) / 2;
+  return keypoints.map((point) => ({
+    ...point,
+    x: point.x - x,
+    y: point.y - y,
+    z: point.z - z,
+  }));
 }
 
 type SourcePoint = {
