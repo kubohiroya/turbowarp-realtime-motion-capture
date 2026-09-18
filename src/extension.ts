@@ -627,6 +627,26 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     );
   }
 
+  public setAvatarExpression(args: {
+    PERSON_ID: unknown;
+    NAME: unknown;
+    WEIGHT: unknown;
+  }): void {
+    this.requireAvatarEnabled();
+    this.avatar.setExpression(
+      Scratch.Cast.toString(args.PERSON_ID),
+      Scratch.Cast.toString(args.NAME),
+      Scratch.Cast.toNumber(args.WEIGHT),
+    );
+  }
+
+  public avatarExpressionNames(args: { PERSON_ID: unknown }): string {
+    this.requireAvatarEnabled();
+    return JSON.stringify(
+      this.avatar.expressionNames(Scratch.Cast.toString(args.PERSON_ID)),
+    );
+  }
+
   public resetAvatarRetarget(): void {
     this.avatar.reset();
   }

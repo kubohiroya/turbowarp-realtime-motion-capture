@@ -45,7 +45,7 @@ the extension has loaded has no effect; reload the project and extension after c
 | `webgpuMoveNetMultiPose` | TurboWarp-Camera-Source 0.5.0 | `acquireCamera({owner, cameraId})`      |
 | `protocolV1Codec`        | None                          | Local validation only                   |
 | `cameraCalibrationV1`    | TurboWarp-Camera-Source 0.5.0 | Shared named camera lease               |
-| `avatarRetargetV1`       | TurboWarp-A-Frame 0.4.0       | Scene capability, version 2 only        |
+| `avatarRetargetV1`       | TurboWarp-A-Frame 0.5.0       | Scene capability, version 2 only        |
 | `frameSyncPatternV1`     | Camera Source 0.5.0 and WebRTC 0.3.0 | Camera frames and synchronized time |
 | `poseFusion3D`           | None                           | PoseFrame2D and calibration JSON supplied through blocks |
 | `glowStickMarkers`       | Pose and fusion features       | Camera pixels, Performance DSL palette, and identity fusion |
@@ -134,6 +134,13 @@ left landmarks. The adapter drives the performer's own side, so `RightUpperArm` 
 `leftUpperArm`, and so on for the arms, hands, and legs; `Spine` and `Hips` turn `spine` and
 `hips`. Each output also needs the joints it is computed from to pass the binding threshold, so
 `RightUpperArm` is skipped when `left_shoulder` or `left_elbow` is unsure.
+
+`set avatar expression [NAME] to [WEIGHT] for person [PERSON_ID]` sets a VRM expression, such as
+`happy` or `blink`, on the avatar bound to a person; `avatar expressions for person [PERSON_ID]`
+lists the names its VRM has. The weight is clamped to 0 through 1, an unknown name throws, and an
+avatar whose VRM is still loading is skipped. Connecting Performance DSL start/end effects to
+expressions belongs to the application: for example, a script that receives the recognition start
+event sets the expression its DSL effect names.
 
 ## Block reference
 
@@ -645,6 +652,28 @@ Adapts corresponding exact v1 frames to BlazePose-33, solves only with Kalidokit
 | Opcode | `applyPoseFrame3DToAvatars` |
 | `POSE3D_JSON` | String, default: `{}` |
 | `POSE2D_JSON` | String, default: `{}` |
+
+### `set avatar expression [NAME] to [WEIGHT] for person [PERSON_ID]`
+
+Sets a VRM expression, weight clamped to 0 through 1, on the avatar bound to a PoseFrame3D person ID. An avatar whose VRM is still loading is skipped.
+
+| Property | Value |
+|---|---|
+| Type | Command |
+| Opcode | `setAvatarExpression` |
+| `NAME` | String, default: `happy` |
+| `WEIGHT` | Number, default: `1` |
+| `PERSON_ID` | String, default: `performer-1` |
+
+### `avatar expressions for person [PERSON_ID]`
+
+Returns the VRM expression names of the avatar bound to a person as a JSON array, or an empty array while it loads.
+
+| Property | Value |
+|---|---|
+| Type | Reporter |
+| Opcode | `avatarExpressionNames` |
+| `PERSON_ID` | String, default: `performer-1` |
 
 ### `reset avatar retarget state`
 

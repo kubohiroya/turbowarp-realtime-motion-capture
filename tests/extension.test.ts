@@ -466,6 +466,8 @@ describe("MultiviewPoseExtension offer QR blocks", () => {
       ),
       loadVrm: vi.fn(async () => undefined),
       setVrmBoneRotation: vi.fn(),
+      setVrmExpression: vi.fn(),
+      vrmExpressionNames: vi.fn(() => ["happy"]),
     };
     const extension = new MultiviewPoseExtension({
       runtime,
@@ -483,6 +485,14 @@ describe("MultiviewPoseExtension offer QR blocks", () => {
       PARENT: "#scene",
       CONFIDENCE: 0.3,
     });
+    extension.setAvatarExpression({
+      PERSON_ID: "performer-1",
+      NAME: "happy",
+      WEIGHT: 0.5,
+    });
+    expect(extension.avatarExpressionNames({ PERSON_ID: "performer-1" })).toBe(
+      '["happy"]',
+    );
     listeners.get("RUNTIME_DISPOSED")?.();
     expect(deleteSelector).toHaveBeenCalledWith("#avatar-1");
     expect(extension.avatarBindingCount()).toBe(0);

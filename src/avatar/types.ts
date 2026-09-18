@@ -18,6 +18,8 @@ export interface AFrameCapabilityPort {
     y: number,
     z: number,
   ): void;
+  setVrmExpression(selector: string, name: string, weight: number): void;
+  vrmExpressionNames(selector: string): string[];
 }
 
 export const KALIDOKIT_RIG_KEYS = [

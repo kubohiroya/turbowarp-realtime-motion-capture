@@ -31,6 +31,11 @@ function mockCapability() {
       async () => undefined,
     ),
     setVrmBoneRotation: vi.fn(),
+    setVrmExpression: vi.fn(),
+    vrmExpressionNames: vi.fn<(selector: string) => string[]>(() => [
+      "happy",
+      "blink",
+    ]),
   };
   const runtime: TurboWarpRuntime = { [AFRAME_CAPABILITY_KEY]: capability };
   return { capability, nodes, runtime };
@@ -262,6 +267,60 @@ describe("AvatarRetargetController", () => {
     expect(controller.state()).toBe("idle");
   });
 
+  it("sets expressions on the avatar bound to a person", async () => {
+    const { capability, controller } = await configured();
+    await controller.bind("performer-1", "avatar-1", "actor", "#scene", 0.3);
+    controller.setExpression("performer-1", "happy", 0.7);
+    expect(capability.setVrmExpression).toHaveBeenCalledWith(
+      "#avatar-1",
+      "happy",
+      0.7,
+    );
+    expect(controller.expressionNames("performer-1")).toEqual([
+      "happy",
+      "blink",
+    ]);
+    expect(capability.vrmExpressionNames).toHaveBeenCalledWith("#avatar-1");
+
+    expect(() => controller.setExpression("performer-2", "happy", 1)).toThrow(
+      /No avatar is bound to person: performer-2/u,
+    );
+    expect(() => controller.setExpression("performer-1", " ", 1)).toThrow(
+      /expression name must not be empty/u,
+    );
+    capability.setVrmExpression.mockImplementationOnce(() => {
+      throw new Error("VRM avatar-1 has no expression: angry");
+    });
+    expect(() => controller.setExpression("performer-1", "angry", 1)).toThrow(
+      /no expression: angry/u,
+    );
+  });
+
+  it("skips expressions while the VRM loads", async () => {
+    const { capability, controller } = await configured();
+    let finish: (() => void) | undefined;
+    capability.loadVrm.mockImplementationOnce(
+      () =>
+        new Promise<undefined>(
+          (resolve) => (finish = () => resolve(undefined)),
+        ),
+    );
+    const binding = controller.bind(
+      "performer-1",
+      "avatar-1",
+      "actor",
+      "#scene",
+      0.3,
+    );
+    controller.setExpression("performer-1", "happy", 1);
+    expect(capability.setVrmExpression).not.toHaveBeenCalled();
+    expect(controller.expressionNames("performer-1")).toEqual([]);
+    finish?.();
+    await binding;
+    controller.setExpression("performer-1", "happy", 1);
+    expect(capability.setVrmExpression).toHaveBeenCalledTimes(1);
+  });
+
   it("fails closed unless A-Frame provides capability v2", async () => {
     const rig = await fixture("rig.json");
     expect(() =>
@@ -293,6 +352,17 @@ describe("AvatarRetargetController", () => {
         rig,
       ),
     ).toThrow(/v2 is required; found version 3/u);
+
+    // TurboWarp-A-Frame 0.4.0 has capability v2 without the expression operations.
+    const withoutExpressions = mockCapability();
+    Reflect.deleteProperty(withoutExpressions.capability, "setVrmExpression");
+    expect(() =>
+      new AvatarRetargetController(withoutExpressions.runtime).registerAsset(
+        "actor",
+        VRM_URL,
+        rig,
+      ),
+    ).toThrow(/missing setVrmExpression\(\); TurboWarp-A-Frame 0.5.0/u);
 
     const withoutVrm = mockCapability();
     Reflect.deleteProperty(withoutVrm.capability, "loadVrm");
