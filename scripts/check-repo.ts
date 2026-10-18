@@ -508,6 +508,7 @@ async function checkPackContents() {
     "pack",
     "--dry-run",
     "--ignore-scripts",
+    "--foreground-scripts=false",
     "--json",
   ]);
   const [pack] = JSON.parse(stdout) as PackResult[];

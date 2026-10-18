@@ -169,5 +169,7 @@
     "PR_merge_npm_publish": false
   },
   "stage2_start_condition": "Select corrected artifacts in GUI and align manifest/lock/resolution before binding/forms; GUI still public 0.1.0.",
-  "initial_nested_Git_resolution": "Approved fixed producer/common URLs checked; first lock resolution used --config.block-exotic-subdeps=false; standard frozen install passed without it. No persistent policy relaxation."
+  "initial_nested_Git_resolution": "Approved fixed producer/common URLs checked; first lock resolution used --config.block-exotic-subdeps=false; standard frozen install passed without it. No persistent policy relaxation.",
+  "record_kind": "historical snapshot before CI corrections and producer re-pinning",
+  "current_record": "editor-schema-ci-fix-20261018.json"
 }
