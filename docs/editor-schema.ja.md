@@ -24,3 +24,7 @@ runtimeは抽出した従来parser/色検証へ同じ位置で委譲し、例外
 共通依存a1ab4f4f5b384eef08ef26e544186ee9d8ad4543、Camera Source 9a9a5c905271e603af9a08142527e8a4aace8decをmanifest/lock/build許可で固定。取得先照合後に標準frozen installを確認し、依存ポリシーの永続変更なし。所在・版・hashはeditor-schema-verification.jsonへ記録。
 
 実行状態（camera件数、開始済み、drop、capability、binding、登録数）は保存ゲートへ含めない。段階2のフォーム登録/encode/bindingと後段の候補UI、②③は未実装。既定OFFのGUIフラグは保持し、新pure入口の利用停止/本Issueのcommit revertでrollbackする。データ移行は不要。
+
+## S1-5の最終確認
+
+対象は合計63ケース（増分検証を含む）。srcを除いた実packageでReact不在・DOM/VM/通信globalアクセス0、skipLibCheck:falseの型検査を確認し、独立生成30ファイルを再emitと全SHA-256照合した。16契約の横断fixtureと依存artifact照合の記録は共通repoのschema-stage1-*.jsonを参照。既存生成基準は保持する。
