@@ -3754,7 +3754,7 @@
   	return typeof value === "object" && value !== null;
   }
   //#endregion
-  //#region src/pose/types.ts
+  //#region src/pose/data-types.ts
   var COCO_17_KEYPOINT_IDS = [
   	"nose",
   	"left_eye",
@@ -66372,6 +66372,17 @@
   	}
   };
   //#endregion
+  //#region src/protocol/utf8.ts
+  /** UTF-8 byte count, including TextEncoder-compatible replacement of unpaired surrogates. */
+  function utf8ByteLength(text) {
+  	let bytes = 0;
+  	for (const character of text) {
+  		const code = character.codePointAt(0);
+  		bytes += code <= 127 ? 1 : code <= 2047 ? 2 : code <= 65535 ? 3 : 4;
+  	}
+  	return bytes;
+  }
+  //#endregion
   //#region node_modules/.pnpm/@sinclair+typebox@0.34.52/node_modules/@sinclair/typebox/build/esm/value/guard/guard.mjs
   /** Returns true if this value is an async iterator */
   function IsAsyncIterator$3(value) {
@@ -70318,6 +70329,30 @@
   * schema and version recognized so far even when validation fails.
   */
   function decodeProtocolJson(json, nowMilliseconds) {
+  	const schemaId = "";
+  	const schemaVersion = void 0;
+  	const failure = (path, message) => ({
+  		ok: false,
+  		json: "",
+  		schema: schemaId,
+  		version: schemaVersion,
+  		diagnostic: {
+  			path,
+  			message
+  		},
+  		value: void 0
+  	});
+  	if (utf8ByteLength(json) > MAX_JSON_BYTES) return failure("/", `JSON exceeds ${MAX_JSON_BYTES} bytes.`);
+  	let value;
+  	try {
+  		value = JSON.parse(json);
+  	} catch (error) {
+  		return failure("/", `Invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+  	}
+  	return validateProtocolValue(value, nowMilliseconds);
+  }
+  /** Value-only contract checks; source byte limits remain in decodeProtocolJson. */
+  function validateProtocolValue(value, nowMilliseconds) {
   	let schemaId = "";
   	let schemaVersion;
   	const failure = (path, message) => ({
@@ -70331,13 +70366,6 @@
   		},
   		value: void 0
   	});
-  	if (new TextEncoder().encode(json).byteLength > MAX_JSON_BYTES) return failure("/", `JSON exceeds ${MAX_JSON_BYTES} bytes.`);
-  	let value;
-  	try {
-  		value = JSON.parse(json);
-  	} catch (error) {
-  		return failure("/", `Invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
-  	}
   	if (!isRecord(value)) return failure("/", "Protocol value must be a JSON object.");
   	if (typeof value.schema !== "string") return failure("/schema", "Schema identifier must be a string.");
   	schemaId = value.schema;
@@ -70464,6 +70492,78 @@
   function isRecord(value) {
   	return typeof value === "object" && value !== null && !Array.isArray(value);
   }
+  //#endregion
+  //#region src/input-validation.ts
+  function parseFrame(source) {
+  	const value = parseJsonObject(source, "PoseFrame3D JSON");
+  	if (!Check(PoseFrame3DSchema, value)) {
+  		const first = Errors(PoseFrame3DSchema, value).First();
+  		throw new Error(`Invalid PoseFrame3D v1 at ${first?.path || "/"}: ${first?.message ?? "schema mismatch"}`);
+  	}
+  	return value;
+  }
+  function parsePoseFrame2D(source) {
+  	const value = parseJsonObject(source, "PoseFrame2D JSON");
+  	if (!Check(PoseFrame2DSchema, value)) {
+  		const first = Errors(PoseFrame2DSchema, value).First();
+  		throw new Error(`Invalid PoseFrame2D v1 at ${first?.path || "/"}: ${first?.message ?? "schema mismatch"}`);
+  	}
+  	return value;
+  }
+  function parseJsonObject(source, label) {
+  	if (source.length > 1048576) throw new Error(`${label} exceeds 1 MiB.`);
+  	try {
+  		return record(JSON.parse(source), label);
+  	} catch (error) {
+  		if (error instanceof SyntaxError) throw new Error(`${label} is invalid JSON.`);
+  		throw error;
+  	}
+  }
+  function record(value, label) {
+  	if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`${label} must be an object.`);
+  	return value;
+  }
+  function findPairingCredential(value, path = "") {
+  	if (Array.isArray(value)) {
+  		for (const [index, item] of value.entries()) {
+  			const found = findPairingCredential(item, `${path}/${index}`);
+  			if (found) return found;
+  		}
+  		return;
+  	}
+  	if (typeof value !== "object" || value === null) return void 0;
+  	for (const [key, item] of Object.entries(value)) {
+  		const itemPath = `${path}/${key.replaceAll("~", "~0").replaceAll("/", "~1")}`;
+  		const normalized = key.toLowerCase().replaceAll(/[^a-z]/gu, "");
+  		if (/^(?:offer|answer|sdp|icecandidate|icecandidates|icepwd|iceufrag|dtlsfingerprint|credential|credentials)$/u.test(normalized)) return itemPath;
+  		const found = findPairingCredential(item, itemPath);
+  		if (found) return found;
+  	}
+  }
+  function parseCalibrationProfile(json) {
+  	let value;
+  	try {
+  		value = JSON.parse(json);
+  	} catch (error) {
+  		throw new CalibrationValidationError("invalid-calibration", String(error));
+  	}
+  	return validateLegacyCalibrationValue(value);
+  }
+  function validateLegacyCalibrationValue(value) {
+  	const credentialPath = findPairingCredential(value);
+  	if (credentialPath) throw new CalibrationValidationError("credential-forbidden", `Pairing credential is forbidden at ${credentialPath}.`);
+  	if (!Check(CameraCalibrationSchema, value)) {
+  		const first = Errors(CameraCalibrationSchema, value).First();
+  		throw new CalibrationValidationError("invalid-calibration", `${first?.path || "/"}: ${first?.message ?? "Invalid v1 profile."}`);
+  	}
+  	return value;
+  }
+  var CalibrationValidationError = class extends Error {
+  	constructor(code, message) {
+  		super(message);
+  		this.code = code;
+  	}
+  };
   //#endregion
   //#region src/calibration/controller.ts
   var MINIMUM_SAMPLES = 8;
@@ -70750,44 +70850,6 @@
   	}
   	return Math.sqrt(squared / left.corners.length) / Math.hypot(width, height);
   }
-  function findPairingCredential(value, path = "") {
-  	if (Array.isArray(value)) {
-  		for (const [index, item] of value.entries()) {
-  			const found = findPairingCredential(item, `${path}/${index}`);
-  			if (found) return found;
-  		}
-  		return;
-  	}
-  	if (typeof value !== "object" || value === null) return void 0;
-  	for (const [key, item] of Object.entries(value)) {
-  		const itemPath = `${path}/${key.replaceAll("~", "~0").replaceAll("/", "~1")}`;
-  		const normalized = key.toLowerCase().replaceAll(/[^a-z]/gu, "");
-  		if (/^(?:offer|answer|sdp|icecandidate|icecandidates|icepwd|iceufrag|dtlsfingerprint|credential|credentials)$/u.test(normalized)) return itemPath;
-  		const found = findPairingCredential(item, itemPath);
-  		if (found) return found;
-  	}
-  }
-  function parseCalibrationProfile(json) {
-  	let value;
-  	try {
-  		value = JSON.parse(json);
-  	} catch (error) {
-  		throw new CalibrationValidationError("invalid-calibration", String(error));
-  	}
-  	const credentialPath = findPairingCredential(value);
-  	if (credentialPath) throw new CalibrationValidationError("credential-forbidden", `Pairing credential is forbidden at ${credentialPath}.`);
-  	if (!Check(CameraCalibrationSchema, value)) {
-  		const first = Errors(CameraCalibrationSchema, value).First();
-  		throw new CalibrationValidationError("invalid-calibration", `${first?.path || "/"}: ${first?.message ?? "Invalid v1 profile."}`);
-  	}
-  	return value;
-  }
-  var CalibrationValidationError = class extends Error {
-  	constructor(code, message) {
-  		super(message);
-  		this.code = code;
-  	}
-  };
   function requireCameraSource$1(runtime) {
   	const candidate = runtime.ext_kubohiroyacamerasource;
   	if (typeof candidate !== "object" || candidate === null || !("acquireCamera" in candidate) || typeof candidate.acquireCamera !== "function") throw new Error("TurboWarp Camera Source is not loaded.");
@@ -80214,22 +80276,6 @@
   		this.lastError = "";
   	}
   };
-  function parseFrame(source) {
-  	const value = parseJsonObject(source, "PoseFrame3D JSON");
-  	if (!Check(PoseFrame3DSchema, value)) {
-  		const first = Errors(PoseFrame3DSchema, value).First();
-  		throw new Error(`Invalid PoseFrame3D v1 at ${first?.path || "/"}: ${first?.message ?? "schema mismatch"}`);
-  	}
-  	return value;
-  }
-  function parsePoseFrame2D(source) {
-  	const value = parseJsonObject(source, "PoseFrame2D JSON");
-  	if (!Check(PoseFrame2DSchema, value)) {
-  		const first = Errors(PoseFrame2DSchema, value).First();
-  		throw new Error(`Invalid PoseFrame2D v1 at ${first?.path || "/"}: ${first?.message ?? "schema mismatch"}`);
-  	}
-  	return value;
-  }
   function parseRigMapping(source) {
   	const value = parseJsonObject(source, "Avatar rig mapping JSON");
   	if ("bones" in value) throw new Error("Rig mapping no longer takes bones: VRM humanoid bones are driven directly.");
@@ -80272,19 +80318,6 @@
   		y: -(left.y + right.y) / 2,
   		z: -(left.z + right.z) / 2
   	};
-  }
-  function parseJsonObject(source, label) {
-  	if (source.length > 1048576) throw new Error(`${label} exceeds 1 MiB.`);
-  	try {
-  		return record(JSON.parse(source), label);
-  	} catch (error) {
-  		if (error instanceof SyntaxError) throw new Error(`${label} is invalid JSON.`);
-  		throw error;
-  	}
-  }
-  function record(value, label) {
-  	if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`${label} must be an object.`);
-  	return value;
   }
   function rejectUnknownKeys(value, allowed, label) {
   	const unknown = Object.keys(value).find((key) => !allowed.has(key));
@@ -81749,6 +81782,11 @@
   	return typeof value === "number" && Number.isFinite(value);
   }
   //#endregion
+  //#region src/fusion/palette-input.ts
+  function validateGlowStickPerformer(performer) {
+  	if (!hsvFromHex(performer.glowStickColor)) throw new Error(`Performer ${performer.performerId} has an invalid glow stick color.`);
+  }
+  //#endregion
   //#region src/fusion/glow-stick.ts
   /** Left/right pairs whose labels MoveNet swaps when a person faces away. */
   var MIRROR_PAIRS = [
@@ -81782,7 +81820,7 @@
   	loadPerformers(performers) {
   		this.colors.clear();
   		for (const performer of performers) {
-  			if (!hsvFromHex(performer.glowStickColor)) throw new Error(`Performer ${performer.performerId} has an invalid glow stick color.`);
+  			validateGlowStickPerformer(performer);
   			this.colors.set(performer.performerId, performer.glowStickColor);
   		}
   		for (const performerId of [...this.keypoints.keys()]) if (!this.colors.has(performerId)) this.keypoints.delete(performerId);

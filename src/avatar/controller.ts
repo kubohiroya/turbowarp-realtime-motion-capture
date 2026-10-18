@@ -1,5 +1,8 @@
-import { Value } from "@sinclair/typebox/value";
-import { PoseFrame2DSchema, PoseFrame3DSchema } from "../protocol/schemas.js";
+import {
+  parseFrame,
+  parsePoseFrame2D,
+  parseJsonObject,
+} from "../input-validation.js";
 import { requireAFrameCapability } from "./aframe-port.js";
 import { KalidokitPoseAdapter } from "./kalidokit-adapter.js";
 import { KALIDOKIT_RIG_KEYS } from "./types.js";
@@ -437,28 +440,6 @@ export class AvatarRetargetController {
   }
 }
 
-function parseFrame(source: string): PoseFrame3D {
-  const value = parseJsonObject(source, "PoseFrame3D JSON");
-  if (!Value.Check(PoseFrame3DSchema, value)) {
-    const first = Value.Errors(PoseFrame3DSchema, value).First();
-    throw new Error(
-      `Invalid PoseFrame3D v1 at ${first?.path || "/"}: ${first?.message ?? "schema mismatch"}`,
-    );
-  }
-  return value as unknown as PoseFrame3D;
-}
-
-function parsePoseFrame2D(source: string): PoseFrame2D {
-  const value = parseJsonObject(source, "PoseFrame2D JSON");
-  if (!Value.Check(PoseFrame2DSchema, value)) {
-    const first = Value.Errors(PoseFrame2DSchema, value).First();
-    throw new Error(
-      `Invalid PoseFrame2D v1 at ${first?.path || "/"}: ${first?.message ?? "schema mismatch"}`,
-    );
-  }
-  return value as unknown as PoseFrame2D;
-}
-
 function parseRigMapping(source: string): AvatarRigMapping {
   const value = parseJsonObject(source, "Avatar rig mapping JSON");
   if ("bones" in value) {
@@ -516,27 +497,6 @@ function worldRoot(
     y: -(left.y + right.y) / 2,
     z: -(left.z + right.z) / 2,
   };
-}
-
-function parseJsonObject(
-  source: string,
-  label: string,
-): Record<string, unknown> {
-  if (source.length > 1_048_576) throw new Error(`${label} exceeds 1 MiB.`);
-  try {
-    return record(JSON.parse(source) as unknown, label);
-  } catch (error) {
-    if (error instanceof SyntaxError)
-      throw new Error(`${label} is invalid JSON.`);
-    throw error;
-  }
-}
-
-function record(value: unknown, label: string): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new Error(`${label} must be an object.`);
-  }
-  return value as Record<string, unknown>;
 }
 
 function rejectUnknownKeys(

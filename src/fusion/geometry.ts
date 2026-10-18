@@ -1,4 +1,4 @@
-import type { CameraCalibrationV1 } from "../calibration/types.js";
+import type { CameraCalibrationV1 } from "../calibration/profile-types.js";
 import type { CameraModel, KeypointObservation, Vector3 } from "./types.js";
 
 const SUPPORTED_DISTORTION_LENGTHS = new Set([0, 4, 5, 8]);

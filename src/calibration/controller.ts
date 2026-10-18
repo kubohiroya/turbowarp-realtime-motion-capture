@@ -1,3 +1,7 @@
+import {
+  parseCalibrationProfile,
+  CalibrationValidationError,
+} from "../input-validation.js";
 import { Value } from "@sinclair/typebox/value";
 import { CameraCalibrationSchema } from "../protocol/schemas.js";
 import type { CameraLeasePort, CameraSourcePort } from "../pose/types.js";
@@ -461,67 +465,6 @@ function normalizedCornerDistance(
     squared += (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
   }
   return Math.sqrt(squared / left.corners.length) / Math.hypot(width, height);
-}
-
-function findPairingCredential(value: unknown, path = ""): string | undefined {
-  if (Array.isArray(value)) {
-    for (const [index, item] of value.entries()) {
-      const found = findPairingCredential(item, `${path}/${index}`);
-      if (found) return found;
-    }
-    return undefined;
-  }
-  if (typeof value !== "object" || value === null) return undefined;
-  for (const [key, item] of Object.entries(value)) {
-    const itemPath = `${path}/${key.replaceAll("~", "~0").replaceAll("/", "~1")}`;
-    const normalized = key.toLowerCase().replaceAll(/[^a-z]/gu, "");
-    if (
-      /^(?:offer|answer|sdp|icecandidate|icecandidates|icepwd|iceufrag|dtlsfingerprint|credential|credentials)$/u.test(
-        normalized,
-      )
-    ) {
-      return itemPath;
-    }
-    const found = findPairingCredential(item, itemPath);
-    if (found) return found;
-  }
-  return undefined;
-}
-
-function parseCalibrationProfile(json: string): CameraCalibrationV1 {
-  let value: unknown;
-  try {
-    value = JSON.parse(json);
-  } catch (error) {
-    throw new CalibrationValidationError("invalid-calibration", String(error));
-  }
-  const credentialPath = findPairingCredential(value);
-  if (credentialPath) {
-    throw new CalibrationValidationError(
-      "credential-forbidden",
-      `Pairing credential is forbidden at ${credentialPath}.`,
-    );
-  }
-  if (!Value.Check(CameraCalibrationSchema, value)) {
-    const first = Value.Errors(CameraCalibrationSchema, value).First();
-    throw new CalibrationValidationError(
-      "invalid-calibration",
-      `${first?.path || "/"}: ${first?.message ?? "Invalid v1 profile."}`,
-    );
-  }
-  return value as CameraCalibrationV1;
-}
-
-class CalibrationValidationError extends Error {
-  public constructor(
-    public readonly code: Extract<
-      CalibrationErrorCode,
-      "invalid-calibration" | "credential-forbidden"
-    >,
-    message: string,
-  ) {
-    super(message);
-  }
 }
 
 function requireCameraSource(runtime: TurboWarpRuntime): CameraSourcePort {

@@ -1,3 +1,4 @@
+import { validateGlowStickPerformer } from "./palette-input.js";
 import { hsvFromHex, hueDistance } from "../markers/color.js";
 import { COCO_17_KEYPOINT_IDS } from "../pose/types.js";
 import type { Coco17KeypointId } from "../pose/types.js";
@@ -60,11 +61,7 @@ export class GlowStickPalette {
   ): void {
     this.colors.clear();
     for (const performer of performers) {
-      if (!hsvFromHex(performer.glowStickColor)) {
-        throw new Error(
-          `Performer ${performer.performerId} has an invalid glow stick color.`,
-        );
-      }
+      validateGlowStickPerformer(performer);
       this.colors.set(performer.performerId, performer.glowStickColor);
     }
     for (const performerId of [...this.keypoints.keys()]) {

@@ -1,4 +1,4 @@
-import type { Coco17KeypointId } from "../pose/types.js";
+import type { Coco17KeypointId } from "../pose/data-types.js";
 
 /** The part of TurboWarp-A-Frame capability v2 that avatar retargeting uses. */
 export interface AFrameCapabilityPort {

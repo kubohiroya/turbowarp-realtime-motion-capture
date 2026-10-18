@@ -1,4 +1,4 @@
-import type { Coco17KeypointId, PoseMarkerV2 } from "../pose/types.js";
+import type { Coco17KeypointId, PoseMarkerV2 } from "../pose/data-types.js";
 
 /** One temporally resampled COCO-17 keypoint of one tracked person. */
 export interface SynchronizedKeypoint2D {

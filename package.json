@@ -31,7 +31,8 @@
     "README.md",
     "README.ja.md",
     "THIRD_PARTY_NOTICES.md",
-    "LICENSE"
+    "LICENSE",
+    "lib-editor/"
   ],
   "publishConfig": {
     "access": "public",
@@ -44,7 +45,7 @@
   "scripts": {
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
-    "build": "vite build",
+    "build": "vite build && npm run build:editor",
     "lint": "eslint config src tests scripts vite.config.ts",
     "format": "prettier --write config src tests scripts vite.config.ts",
     "format:check": "prettier --check config src tests scripts vite.config.ts",
@@ -56,10 +57,12 @@
     "repo:check": "node scripts/check-repo.ts",
     "pack:check": "npm pack --dry-run --ignore-scripts",
     "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run test && pnpm run docs:check && pnpm run schemas:check && pnpm run check:dist && pnpm run repo:check && pnpm run pack:check",
-    "check:dist": "pnpm run build && node scripts/check-dist.ts"
+    "check:dist": "pnpm run build && node scripts/check-dist.ts",
+    "build:editor": "tsc -p tsconfig.editor.json",
+    "prepare": "npm run build"
   },
   "dependencies": {
-    "@kubohiroya/turbowarp-camera-source": "0.7.0",
+    "@kubohiroya/turbowarp-camera-source": "git+https://github.com/kubohiroya/turbowarp-camera-source.git#53a2a400bbdee6a850379eff29f0d422d948174e",
     "@kubohiroya/turbowarp-time-space-sync": "0.1.0",
     "@sinclair/typebox": "0.34.52",
     "@techstark/opencv-js": "4.12.0-release.1",
@@ -68,7 +71,8 @@
     "@tensorflow/tfjs-converter": "4.22.0",
     "@tensorflow/tfjs-core": "4.22.0",
     "kalidokit": "1.1.5",
-    "qrcode": "1.5.4"
+    "qrcode": "1.5.4",
+    "@kubohiroya/turbowarp-extension-data-editor": "git+https://github.com/kubohiroya/turbowarp-extension-data-editor.git#b5f4b8d2e391a0d57d091c8f3e1c2d58da152dc8"
   },
   "peerDependencies": {
     "@kubohiroya/turbowarp-aframe": "0.5.0",
@@ -100,5 +104,12 @@
     "typescript-eslint": "^8.66.0",
     "vite": "^8.2.2",
     "vitest": "^4.1.10"
+  },
+  "exports": {
+    "./*": "./*",
+    "./editor-schema": {
+      "types": "./lib-editor/src/editor-schema.d.ts",
+      "import": "./lib-editor/src/editor-schema.js"
+    }
   }
 }
