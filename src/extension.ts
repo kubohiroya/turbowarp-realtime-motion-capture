@@ -1,3 +1,4 @@
+import { registerSourceEditors } from "./source-editors.js";
 import definitions from "./block-definitions.json";
 import { extensionConfig } from "./config.js";
 import {
@@ -167,6 +168,8 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
       this.endOfferQrDisplay();
   };
 
+  private readonly removeSourceEditors: () => void;
+
   public constructor(options: MultiviewPoseExtensionOptions = {}) {
     // Before anything is built. A combination that would run two
     // implementations of one path has to stop here, while there is still
@@ -223,6 +226,14 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     this.frameSync = options.frameSyncController;
     this.frameSyncOverlay = options.frameSyncDisplay;
     this.fusion = new PoseFusionController();
+    this.removeSourceEditors = registerSourceEditors(
+      Scratch,
+      this.calibrationDelegated,
+      options.nowMilliseconds,
+      blockDefinitions
+        .filter((block) => this.blockEnabled(block.feature))
+        .map((block) => block.opcode),
+    );
     this.runtime.on?.("PROJECT_STOP_ALL", this.stopListener);
     this.runtime.on?.("PROJECT_RUN_STOP", this.runStopListener);
     this.runtime.on?.("PROJECT_LOADED", this.stopListener);
@@ -1008,6 +1019,7 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   }
 
   public dispose(): void {
+    this.removeSourceEditors();
     this.endOfferQrDisplay();
     void this.pose.stop();
     void this.poseCameras.stopAll();

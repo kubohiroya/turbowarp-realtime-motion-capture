@@ -360,3 +360,99 @@ export function validateMotionSource(
     result,
   };
 }
+
+import { parseRigMapping } from "./avatar/rig-input.js";
+import avatarRigDocument from "../schemas/avatar-rig.schema.json" with { type: "json" };
+export const avatarRigSchemaBundle: SchemaBundle = {
+  identity: {
+    ownerId: "turbowarp-realtime-motion-capture",
+    contractId: "avatar-rig",
+    revision: "source-v1",
+    variantId: "json",
+  },
+  dialect: "2020-12",
+  root: {
+    retrievalUri: avatarRigDocument.$id,
+    document: avatarRigDocument as SchemaDocument,
+    artifact: {
+      role: "canonical-schema",
+      source: {
+        repository: "turbowarp-realtime-motion-capture",
+        path: "schemas/avatar-rig.schema.json",
+      },
+    },
+  },
+  resources: [],
+  provenance: {
+    canonicalSources: [
+      {
+        repository: "turbowarp-realtime-motion-capture",
+        path: "schemas/avatar-rig.schema.json",
+      },
+      {
+        repository: "turbowarp-realtime-motion-capture",
+        path: "src/avatar/rig-input.ts",
+      },
+    ],
+    generatedFiles: [],
+    referenceSchemas: [],
+    generationSources: [],
+  },
+};
+const avatarRigCompilation = compileSchemaBundle(avatarRigSchemaBundle);
+export function decodeAvatarRigSource(source: string) {
+  return {
+    source,
+    format: "json" as const,
+    variantId: "json",
+    data: JSON.parse(source) as SchemaJsonValue,
+  };
+}
+/** Validate only the supplied source; no controller or runtime resources are touched. */
+export function validateAvatarRigSource<C = null>(
+  source: string,
+  context: SchemaValidationContext<C>,
+) {
+  if (avatarRigCompilation.kind !== "compiled")
+    return { source, result: avatarRigCompilation };
+  let data: SchemaJsonValue;
+  try {
+    data = JSON.parse(source) as SchemaJsonValue;
+  } catch {
+    return {
+      source,
+      result: {
+        kind: "invalid" as const,
+        diagnostics: [
+          {
+            scope: { identity: avatarRigSchemaBundle.identity },
+            phase: "decode" as const,
+            code: "input-format-invalid" as const,
+            dataPath: "",
+          },
+        ],
+      },
+    };
+  }
+  const accepted = (): boolean => {
+    try {
+      parseRigMapping(source);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  return {
+    source,
+    result: validateSchemaInput(avatarRigCompilation.validator, data, {
+      context,
+      ownerValidate: () =>
+        accepted()
+          ? { kind: "valid", issues: [] }
+          : {
+              kind: "invalid",
+              issues: [{ dataPath: "", ruleId: "avatar-rig-owner-input" }],
+            },
+    }),
+  };
+}

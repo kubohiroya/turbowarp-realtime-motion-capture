@@ -1,8 +1,5 @@
-import {
-  parseFrame,
-  parsePoseFrame2D,
-  parseJsonObject,
-} from "../input-validation.js";
+import { parseRigMapping } from "./rig-input.js";
+import { parseFrame, parsePoseFrame2D } from "../input-validation.js";
 import { requireAFrameCapability } from "./aframe-port.js";
 import { KalidokitPoseAdapter } from "./kalidokit-adapter.js";
 import { KALIDOKIT_RIG_KEYS } from "./types.js";
@@ -37,7 +34,6 @@ interface AvatarBinding {
 }
 
 const identifiers = /^[A-Za-z0-9._-]{1,64}$/u;
-const eventNames = /^[A-Za-z0-9._:-]{1,80}$/u;
 const MAX_URL_LENGTH = 2048;
 const MAX_DATA_URL_LENGTH = 16 * 1024 * 1024;
 /** Every avatar instance is an empty node that the VRM is loaded onto. */
@@ -440,45 +436,6 @@ export class AvatarRetargetController {
   }
 }
 
-function parseRigMapping(source: string): AvatarRigMapping {
-  const value = parseJsonObject(source, "Avatar rig mapping JSON");
-  if ("bones" in value) {
-    throw new Error(
-      "Rig mapping no longer takes bones: VRM humanoid bones are driven directly.",
-    );
-  }
-  const allowed = new Set([
-    "root",
-    "rootScale",
-    "rootOffset",
-    "recognitionStartEvent",
-    "recognitionEndEvent",
-  ]);
-  rejectUnknownKeys(value, allowed, "rig mapping");
-  const root = value.root ?? "kalidokit";
-  if (root !== "kalidokit" && root !== "world") {
-    throw new Error('root must be "kalidokit" or "world".');
-  }
-  const rootScale = finite(value.rootScale ?? 1, "rootScale");
-  if (rootScale <= 0) throw new Error("rootScale must be greater than zero.");
-  const rootOffset = vector3(value.rootOffset ?? [0, 0, 0], "rootOffset");
-  const recognitionStartEvent = eventName(
-    value.recognitionStartEvent ?? "twmp-recognition-start",
-    "recognitionStartEvent",
-  );
-  const recognitionEndEvent = eventName(
-    value.recognitionEndEvent ?? "twmp-recognition-end",
-    "recognitionEndEvent",
-  );
-  return {
-    root,
-    rootScale,
-    rootOffset,
-    recognitionStartEvent,
-    recognitionEndEvent,
-  };
-}
-
 /**
  * The midpoint of the PoseFrame3D hips, in the scene's axes.
  *
@@ -499,33 +456,6 @@ function worldRoot(
   };
 }
 
-function rejectUnknownKeys(
-  value: Record<string, unknown>,
-  allowed: ReadonlySet<string>,
-  label: string,
-): void {
-  const unknown = Object.keys(value).find((key) => !allowed.has(key));
-  if (unknown) throw new Error(`${label} contains unknown field: ${unknown}`);
-}
-
-function vector3(value: unknown, label: string): [number, number, number] {
-  if (!Array.isArray(value) || value.length !== 3) {
-    throw new Error(`${label} must contain exactly three numbers.`);
-  }
-  return [
-    finite(value[0], `${label}[0]`),
-    finite(value[1], `${label}[1]`),
-    finite(value[2], `${label}[2]`),
-  ];
-}
-
-function finite(value: unknown, label: string): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(`${label} must be a finite number.`);
-  }
-  return value;
-}
-
 function threshold(value: number): number {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
     throw new Error("Avatar confidence threshold must be between 0 and 1.");
@@ -544,12 +474,6 @@ function nonEmpty(value: unknown, label: string): string {
     throw new Error(`${label} must not be empty.`);
   }
   return value.trim();
-}
-
-function eventName(value: unknown, label: string): string {
-  const normalized = nonEmpty(value, label);
-  if (!eventNames.test(normalized)) throw new Error(`Invalid ${label}.`);
-  return normalized;
 }
 
 /**
