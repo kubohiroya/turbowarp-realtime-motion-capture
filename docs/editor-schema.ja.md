@@ -1,5 +1,7 @@
 # 段階1: motionの固定入力契約
 
+> 現在のGit依存固定・実解決・検証結果は[editor-schema-publication.ja.md](editor-schema-publication.ja.md)と同名JSONを参照。以下は依存更新前の採取履歴として保持する。
+
 追跡: https://github.com/kubohiroya/turbowarp-realtime-motion-capture/issues/32 。共通親はextension-data-editor #18。
 
 `./editor-schema`はmotionSchemaBundles、validateMotionSource、motionOwnerValidator、既存入力parserのpure入口を公開する。対象はmotion-calibration、pose2d、pose2d-v2（union構成専用）、pose3d、performance-dsl、protocol-union、pose2d-union、motion-calibration-importの8契約。Pose2D v2の独立ブロック入力は追加しない。

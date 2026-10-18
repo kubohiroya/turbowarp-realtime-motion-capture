@@ -12,14 +12,14 @@ importers:
         specifier: 0.5.0
         version: 0.5.0
       '@kubohiroya/turbowarp-camera-source':
-        specifier: git+https://github.com/kubohiroya/turbowarp-camera-source.git#9a9a5c905271e603af9a08142527e8a4aace8dec
-        version: https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/9a9a5c905271e603af9a08142527e8a4aace8dec(react@18.3.1)
+        specifier: git+https://github.com/kubohiroya/turbowarp-camera-source.git#b40402000fc22c27f4dd9eb81fb46795c450d6c7
+        version: https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/b40402000fc22c27f4dd9eb81fb46795c450d6c7(react@18.3.1)
       '@kubohiroya/turbowarp-extension-data-editor':
-        specifier: git+https://github.com/kubohiroya/turbowarp-extension-data-editor.git#a1ab4f4f5b384eef08ef26e544186ee9d8ad4543
-        version: https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/a1ab4f4f5b384eef08ef26e544186ee9d8ad4543(react@18.3.1)
+        specifier: git+https://github.com/kubohiroya/turbowarp-extension-data-editor.git#b5f4b8d2e391a0d57d091c8f3e1c2d58da152dc8
+        version: https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/b5f4b8d2e391a0d57d091c8f3e1c2d58da152dc8(react@18.3.1)
       '@kubohiroya/turbowarp-jsqr':
         specifier: 0.3.0
-        version: 0.3.0(@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/9a9a5c905271e603af9a08142527e8a4aace8dec(react@18.3.1))
+        version: 0.3.0(@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/b40402000fc22c27f4dd9eb81fb46795c450d6c7(react@18.3.1))
       '@kubohiroya/turbowarp-time-space-sync':
         specifier: 0.1.0
         version: 0.1.0
@@ -318,13 +318,13 @@ packages:
     resolution: {integrity: sha512-XKCahVb/i90PT5UzW4SlE2gw3W5AIFlzL9DV7c7oDyUPGwVae+lSaTYq6JIJS2gfZ2qfMpI7IpuYZfgy7SAsFw==}
     engines: {node: '>=22.18.0'}
 
-  '@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/9a9a5c905271e603af9a08142527e8a4aace8dec':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/9a9a5c905271e603af9a08142527e8a4aace8dec}
+  '@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/b40402000fc22c27f4dd9eb81fb46795c450d6c7':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/b40402000fc22c27f4dd9eb81fb46795c450d6c7}
     version: 0.16.0
     engines: {node: '>=22.18.0'}
 
-  '@kubohiroya/turbowarp-extension-data-editor@https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/a1ab4f4f5b384eef08ef26e544186ee9d8ad4543':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/a1ab4f4f5b384eef08ef26e544186ee9d8ad4543}
+  '@kubohiroya/turbowarp-extension-data-editor@https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/b5f4b8d2e391a0d57d091c8f3e1c2d58da152dc8':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/b5f4b8d2e391a0d57d091c8f3e1c2d58da152dc8}
     version: 0.1.0
     engines: {node: '>=22'}
     peerDependencies:
@@ -1651,14 +1651,14 @@ snapshots:
 
   '@kubohiroya/turbowarp-camera-source@0.7.0': {}
 
-  '@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/9a9a5c905271e603af9a08142527e8a4aace8dec(react@18.3.1)':
+  '@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/b40402000fc22c27f4dd9eb81fb46795c450d6c7(react@18.3.1)':
     dependencies:
-      '@kubohiroya/turbowarp-extension-data-editor': https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/a1ab4f4f5b384eef08ef26e544186ee9d8ad4543(react@18.3.1)
+      '@kubohiroya/turbowarp-extension-data-editor': https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/b5f4b8d2e391a0d57d091c8f3e1c2d58da152dc8(react@18.3.1)
     transitivePeerDependencies:
       - react
       - react-dom
 
-  '@kubohiroya/turbowarp-extension-data-editor@https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/a1ab4f4f5b384eef08ef26e544186ee9d8ad4543(react@18.3.1)':
+  '@kubohiroya/turbowarp-extension-data-editor@https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/b5f4b8d2e391a0d57d091c8f3e1c2d58da152dc8(react@18.3.1)':
     dependencies:
       '@rjsf/core': 5.24.13(@rjsf/utils@5.24.13(react@18.3.1))(react@18.3.1)
       '@rjsf/utils': 5.24.13(react@18.3.1)
@@ -1674,11 +1674,11 @@ snapshots:
 
   '@kubohiroya/turbowarp-extension-template@0.4.0': {}
 
-  '@kubohiroya/turbowarp-jsqr@0.3.0(@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/9a9a5c905271e603af9a08142527e8a4aace8dec(react@18.3.1))':
+  '@kubohiroya/turbowarp-jsqr@0.3.0(@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/b40402000fc22c27f4dd9eb81fb46795c450d6c7(react@18.3.1))':
     dependencies:
       jsqr: 1.4.0
     optionalDependencies:
-      '@kubohiroya/turbowarp-camera-source': https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/9a9a5c905271e603af9a08142527e8a4aace8dec(react@18.3.1)
+      '@kubohiroya/turbowarp-camera-source': https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/b40402000fc22c27f4dd9eb81fb46795c450d6c7(react@18.3.1)
 
   '@kubohiroya/turbowarp-time-space-sync@0.1.0':
     dependencies:
