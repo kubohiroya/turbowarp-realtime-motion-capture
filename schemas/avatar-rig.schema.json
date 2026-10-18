@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:twrmc:avatar-rig",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "root": {
+      "enum": ["kalidokit", "world", null]
+    },
+    "rootScale": {
+      "anyOf": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "rootOffset": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recognitionStartEvent": {
+      "type": ["string", "null"]
+    },
+    "recognitionEndEvent": {
+      "type": ["string", "null"]
+    }
+  }
+}

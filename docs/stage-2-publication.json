@@ -1,0 +1,108 @@
+{
+  "scope": "stage-2-stable-release",
+  "version": "0.8.0",
+  "previousVersion": "0.7.0",
+  "baseHead": "a3e4e18f07de0e17febc7c3520da41dab1e6774e",
+  "issue": "https://github.com/kubohiroya/turbowarp-realtime-motion-capture/issues/34",
+  "issueWrites": "not performed in this release; Ref only, no automatic close",
+  "dependencies": {
+    "@kubohiroya/turbowarp-camera-source": "git+https://github.com/kubohiroya/turbowarp-camera-source.git#e11cc43ec35ff333bbefd50e8dcb461ee939c102",
+    "@kubohiroya/turbowarp-time-space-sync": "0.1.0",
+    "@kubohiroya/turbowarp-extension-data-editor": "git+https://github.com/kubohiroya/turbowarp-extension-data-editor.git#76fa1d50a3c188082ceef723ea018a9d8769ea6e"
+  },
+  "commonBuildInfo": {
+    "name": "@kubohiroya/turbowarp-extension-data-editor",
+    "version": "0.2.0",
+    "repository": "https://github.com/kubohiroya/turbowarp-extension-data-editor",
+    "revision": "76fa1d50a3c188082ceef723ea018a9d8769ea6e",
+    "sourceState": "archive",
+    "sourceSha256": "912efc0438710958698527aa5c26a33b0b1c2da280f91d36b048f6f2389a48f0",
+    "capabilities": {
+      "preparedSource": 1
+    }
+  },
+  "commonMainTarballSha256": "f51d14a502442336d6803009e3f6780fb03f7c3c51203287fed83073551a9194",
+  "commonMainTarballBuildInfo": {
+    "name": "@kubohiroya/turbowarp-extension-data-editor",
+    "version": "0.2.0",
+    "repository": "https://github.com/kubohiroya/turbowarp-extension-data-editor",
+    "revision": "76fa1d50a3c188082ceef723ea018a9d8769ea6e",
+    "sourceState": "commit",
+    "sourceSha256": "912efc0438710958698527aa5c26a33b0b1c2da280f91d36b048f6f2389a48f0",
+    "capabilities": {
+      "preparedSource": 1
+    }
+  },
+  "commonProvenance": "Git prepare archive and main pack commit identify the same revision/sourceSha256; provenance sourceState is intentionally distinguished",
+  "fastUri": "3.1.8 across direct/common-AJV and all lock nodes",
+  "reactDomTestPeer": "devDependency 18.3.1 exact; no production API/permission change",
+  "node": "22.23.3",
+  "packageManager": "pnpm@11.18.0",
+  "fullTests": 176,
+  "fullTestFiles": 24,
+  "generatedFiles": 35,
+  "generatedSha256": {
+    "dist/extension-manifest.json": "5b7c2f2907a7be39159e6acb143d1aa1d9ac85eb25c1032ef33a52ce275241d3",
+    "dist/turbowarp-realtime-motion-capture.js": "eb250506a1978c000ea48a471617d2e7c6bfd9be6f59742e3618124d3ee2f8d1",
+    "lib-editor/schemas/avatar-rig.schema.json": "57ab01068425147ddeff5a32340ffe3db97ede50db0de81a1315ff5041ba2c09",
+    "lib-editor/schemas/pose-frame-3d-v1.json": "342feecaa0cc038359ace4eb5859ba69d166c3b43a296a191a3f1b12e9b6c245",
+    "lib-editor/schemas/pose-frame-2d-v1.json": "e2208a19a238026882b8cc57f092dab08c4ac982cf268e804b41b0d4764706d3",
+    "lib-editor/schemas/pose-frame-2d-v2.json": "0e024db7cd214a93425a3d0bd4a8ba8e56e8a3373ddf3b20f3e457413e2d6437",
+    "lib-editor/schemas/session-policy-v1.json": "4ffd287e470f1064c775a2b71884040c59aae42f955367b46f2897ac090e37f2",
+    "lib-editor/schemas/performance-dsl-v1.json": "c088729f5ea7e3c4f921f930ece9acfb75f2142b3324c2d70f236560f90e1664",
+    "lib-editor/schemas/camera-calibration-v1.json": "a0d2bf55b95f0f30992fdb7adb71842997fc44c2675fcbd51615f7003dfbf9a8",
+    "lib-editor/src/editor-schema.d.ts": "b0335c80eb7ac3713d865814083bba5ea0c5ff3c9dd7350a026470f6b9cb514b",
+    "lib-editor/src/input-validation.js": "6bda23087a462001be433807db2125141224edd8fe5d792e0eb7e947b689f136",
+    "lib-editor/src/input-validation.d.ts": "ba793185e8a4d09f88e87a073cceed1fff42efcdecc98949b1124812cdb2b5ce",
+    "lib-editor/src/editor-schema.js": "3597d0a5c577e3b1d579e6934d4e41381c97c236dfe580894041cfc76c9a3f67",
+    "lib-editor/src/fusion/geometry.d.ts": "f6c2a550a8c07d1864f920dc0e0b45ecb55b403c510009876011cb61e970a664",
+    "lib-editor/src/fusion/types.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+    "lib-editor/src/fusion/types.d.ts": "d66727c7f698e3bce900c6855fa328b9870ccc2ca47ae4db36ce818cc7349452",
+    "lib-editor/src/fusion/palette-input.d.ts": "3010cc1d1791ba61a38c6e48b52f385ba233c51757f8f375c7af42a94eec4d5d",
+    "lib-editor/src/fusion/palette-input.js": "b044f14afc12e7755f5b3b423f133087170ace7dc69611948ecd8ea0ffbf65c5",
+    "lib-editor/src/fusion/geometry.js": "fcedf81b2f9a7ace16c07af55f5dec2addecefc4e59a120fc3c34d8b6ed0a8e1",
+    "lib-editor/src/markers/color.d.ts": "1c7cf624205a294a9fc883cc6b1957a5f30786e00d64184e2d3265b8d800a2fc",
+    "lib-editor/src/markers/color.js": "cadd164c68dbe27f1065dc44e331d12c540a66fbc05abb9a9cb2960405a4c0a6",
+    "lib-editor/src/calibration/profile-types.d.ts": "2d45580c16cc932d1730b22b8221a18dd63b3765a7dfdf058a3e039f6ae689cb",
+    "lib-editor/src/calibration/profile-types.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+    "lib-editor/src/protocol/utf8.js": "476e72e7e2e7b658f3cfa0535c9eee4ee111472155e37a3d335ca5fe315a21e4",
+    "lib-editor/src/protocol/codec.d.ts": "004d8d5a5db8c2011401beda5b8fd428cd0aa4e8d10462d402dfd3b6eee9650b",
+    "lib-editor/src/protocol/utf8.d.ts": "baf08f4165b621eabfa2900ddb72a0c0ea3e884c503dbd41096ba95c69513cb9",
+    "lib-editor/src/protocol/codec.js": "b6df4ab86fe38fedac1bfbcea57702e343b3b78033076fe4c948155465620b21",
+    "lib-editor/src/protocol/schemas.d.ts": "80223aeaa770cc611c9b2cdcda3744a53528de8c4f078f073faf701ab281fbd9",
+    "lib-editor/src/protocol/schemas.js": "4b11fb1f9f6cc7229ba7df6229fd31f91cab5a9e8b4c19805588a393f2228d00",
+    "lib-editor/src/pose/data-types.d.ts": "8a002a0b37e74f47c11d892001f4097be0944dedfe4702430a216037a89ee78b",
+    "lib-editor/src/pose/data-types.js": "ca369d31e722b0fa2652c74f10d4dd439720a26db19e75b9e26032aed329086c",
+    "lib-editor/src/avatar/types.js": "15c4cdfe056d2bd09772406150107015e4a220403be6aebc1ce005ba0c012275",
+    "lib-editor/src/avatar/types.d.ts": "b02bf5f939567ffff172125f751b519e949d5d395683b80538aeb58ba63eb296",
+    "lib-editor/src/avatar/rig-input.js": "5b5573854fa1dd1783af36cb3e00544ecd1f67d3230de93ee05fa56732263a51",
+    "lib-editor/src/avatar/rig-input.d.ts": "897a2b8880eb6ed17a269b1f17472d5c149f08c9698fbaa82f5c1fd8ebd5e948"
+  },
+  "samePathTwoBuildsMatch": true,
+  "freshCrossPathBuildMatches": true,
+  "productionAudit": "0 vulnerabilities",
+  "historicalStage2Subset": {
+    "count": 659,
+    "note": "prior whole-cohort related cases; not added to current full suite",
+    "guiCases": 5,
+    "stepsPerCase": 8
+  },
+  "flags": {
+    "blockEditorSourceForms": false,
+    "blockEditorDialogsRequired": true
+  },
+  "postCommitChecks": "repository check-dist/docs Git guards run after commit; CI outcome recorded in PR and aggregate",
+  "publication": "user-authorized commit/push/PR/squash merge and npm release; npm publisher is coordinated separately",
+  "rollback": "flag OFF; reverse dependency revert package/lock/allowBuilds; retain published npm versions and publish fixes under new versions",
+  "dependencySecurityScope": {
+    "workspaceOverridesDoNotPropagateToNpmConsumers": true,
+    "ajvFastUriRequested": "^3.0.1",
+    "oldLockContextFixedTo": "3.1.8",
+    "mainNpmConsumerSmoke": "recorded separately after merge; no claim from workspace overrides alone",
+    "braceExpansion": {
+      "parentRange": "^1.1.7",
+      "oldLock": "1.1.18",
+      "workspacePatch": "1.1.21"
+    }
+  }
+}
