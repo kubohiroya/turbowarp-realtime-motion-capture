@@ -1,3 +1,4 @@
+import { utf8ByteLength } from "./utf8.js";
 import { Value } from "@sinclair/typebox/value";
 import {
   protocolSchemaFor,
@@ -45,6 +46,36 @@ export function decodeProtocolJson(
   json: string,
   nowMilliseconds: number,
 ): ProtocolDecodeResult {
+  const schemaId = "";
+  const schemaVersion: number | undefined = undefined;
+  const failure = (path: string, message: string): ProtocolDecodeResult => ({
+    ok: false,
+    json: "",
+    schema: schemaId,
+    version: schemaVersion,
+    diagnostic: { path, message },
+    value: undefined,
+  });
+
+  if (utf8ByteLength(json) > MAX_JSON_BYTES) {
+    return failure("/", `JSON exceeds ${MAX_JSON_BYTES} bytes.`);
+  }
+
+  let value: unknown;
+  try {
+    value = JSON.parse(json);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return failure("/", `Invalid JSON: ${message}`);
+  }
+  return validateProtocolValue(value, nowMilliseconds);
+}
+
+/** Value-only contract checks; source byte limits remain in decodeProtocolJson. */
+export function validateProtocolValue(
+  value: unknown,
+  nowMilliseconds: number,
+): ProtocolDecodeResult {
   let schemaId = "";
   let schemaVersion: number | undefined;
   const failure = (path: string, message: string): ProtocolDecodeResult => ({
@@ -56,17 +87,6 @@ export function decodeProtocolJson(
     value: undefined,
   });
 
-  if (new TextEncoder().encode(json).byteLength > MAX_JSON_BYTES) {
-    return failure("/", `JSON exceeds ${MAX_JSON_BYTES} bytes.`);
-  }
-
-  let value: unknown;
-  try {
-    value = JSON.parse(json);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return failure("/", `Invalid JSON: ${message}`);
-  }
   if (!isRecord(value)) {
     return failure("/", "Protocol value must be a JSON object.");
   }
