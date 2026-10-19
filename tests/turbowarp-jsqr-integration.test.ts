@@ -12,7 +12,8 @@ describe("TurboWarp jsQR integration", () => {
       sessionId: "jsqr-integration",
       createdAt: 1000,
     });
-    let scanner: { scanFrame(frame: unknown): string | null } | undefined;
+    let scanner:
+      { scanFrame(frame: unknown): Promise<string | null> } | undefined;
     const runtime: Record<string, unknown> = {};
     vi.stubGlobal("Scratch", {
       extensions: {
@@ -32,20 +33,25 @@ describe("TurboWarp jsQR integration", () => {
     await import("@kubohiroya/turbowarp-jsqr/jsqr.js");
     expect(scanner).toBeDefined();
 
+    let image: ReturnType<typeof rasterize>;
     for (const text of result.texts) {
-      const image = rasterize(text);
+      image = rasterize(text);
       vi.stubGlobal("document", {
         createElement: () => ({
           width: 0,
           height: 0,
           getContext: () => ({
             drawImage: () => undefined,
-            getImageData: () => ({ data: image.data }),
+            getImageData: () => ({
+              data: image.data,
+              width: image.width,
+              height: image.width,
+            }),
           }),
         }),
       });
       expect(
-        scanner?.scanFrame({
+        await scanner?.scanFrame({
           element: {},
           width: image.width,
           height: image.width,

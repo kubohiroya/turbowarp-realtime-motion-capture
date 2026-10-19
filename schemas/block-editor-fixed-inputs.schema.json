@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kubohiroya.github.io/turbowarp-realtime-motion-capture/schemas/block-editor-fixed-inputs.schema.json",
+  "$defs": {
+    "showOfferQrPart": {
+      "type": "object",
+      "properties": {
+        "INDEX": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "inferNextPoseFrame": {
+      "type": "object",
+      "properties": {
+        "CAPTURE_TIMESTAMP_US": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "additionalProperties": false
+    },
+    "startCameraCalibration": {
+      "type": "object",
+      "properties": {
+        "COLUMNS": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 20
+        },
+        "ROWS": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 20
+        },
+        "SQUARE_METERS": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "MAX_ERROR_PX": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "bindAvatarPerson": {
+      "type": "object",
+      "properties": {
+        "CONFIDENCE": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "setAvatarExpression": {
+      "type": "object",
+      "properties": {
+        "WEIGHT": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "startFrameSyncDecoder": {
+      "type": "object",
+      "properties": {
+        "SECONDS": {
+          "type": "number",
+          "maximum": 60
+        }
+      },
+      "additionalProperties": false
+    },
+    "calibrateFrameSyncDecoder": {
+      "type": "object",
+      "properties": {
+        "SECONDS": {
+          "type": "number",
+          "maximum": 60
+        }
+      },
+      "additionalProperties": false
+    },
+    "setFrameSyncDisplayRefresh": {
+      "type": "object",
+      "properties": {
+        "REFRESH_US": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "startPoseFusion": {
+      "type": "object",
+      "properties": {
+        "DELAY_MS": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5000
+        },
+        "JITTER_MS": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "MIN_SCORE": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "fusePoseFrame3DAt": {
+      "type": "object",
+      "properties": {
+        "TIMESTAMP_US": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "additionalProperties": false
+    },
+    "setPerformerGlowStick": {
+      "type": "object",
+      "properties": {
+        "KEYPOINT": {
+          "type": "string",
+          "enum": [
+            "nose",
+            "left_eye",
+            "right_eye",
+            "left_ear",
+            "right_ear",
+            "left_shoulder",
+            "right_shoulder",
+            "left_elbow",
+            "right_elbow",
+            "left_wrist",
+            "right_wrist",
+            "left_hip",
+            "right_hip",
+            "left_knee",
+            "right_knee",
+            "left_ankle",
+            "right_ankle"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
