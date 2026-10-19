@@ -91502,8 +91502,16 @@
   	"degenerate-view": "camera-unavailable",
   	"insufficient-points": "camera-unavailable",
   	"verification-failed": "camera-unavailable",
+  	"decoder-not-running": "camera-unavailable",
+  	"profile-without-fiducials": "panel-not-found",
+  	"intrinsic-profile-missing": "camera-unavailable",
+  	"too-few-corner-frames": "panel-not-found",
+  	"corners-unstable": "decode-unstable",
+  	"orientation-unproven": "decode-unstable",
   	"photosensitivity-unacknowledged": "camera-unavailable",
   	"display-unavailable": "camera-unavailable",
+  	"unknown-pattern-profile": "camera-unavailable",
+  	"pattern-profile-in-use": "camera-unavailable",
   	"invalid-payload": "camera-unavailable"
   };
   /** Narrows a code to the vocabulary an old frame-sync opcode understands. */
