@@ -16,14 +16,14 @@ importers:
         specifier: 0.5.0
         version: 0.5.0
       '@kubohiroya/turbowarp-camera-source':
-        specifier: git+https://github.com/kubohiroya/turbowarp-camera-source.git#e11cc43ec35ff333bbefd50e8dcb461ee939c102
-        version: https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e11cc43ec35ff333bbefd50e8dcb461ee939c102(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: git+https://github.com/kubohiroya/turbowarp-camera-source.git#e23f2e1e3db28c5b7e0290949cf99004b689d90c
+        version: https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e23f2e1e3db28c5b7e0290949cf99004b689d90c(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@kubohiroya/turbowarp-extension-data-editor':
-        specifier: git+https://github.com/kubohiroya/turbowarp-extension-data-editor.git#76fa1d50a3c188082ceef723ea018a9d8769ea6e
-        version: https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/76fa1d50a3c188082ceef723ea018a9d8769ea6e(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: git+https://github.com/kubohiroya/turbowarp-extension-data-editor.git#485f0e550e622235624b5e9176820161aeeba252
+        version: https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/485f0e550e622235624b5e9176820161aeeba252(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@kubohiroya/turbowarp-jsqr':
         specifier: 0.3.0
-        version: 0.3.0(@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e11cc43ec35ff333bbefd50e8dcb461ee939c102(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 0.3.0(@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e23f2e1e3db28c5b7e0290949cf99004b689d90c(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@kubohiroya/turbowarp-time-space-sync':
         specifier: 0.1.0
         version: 0.1.0
@@ -325,13 +325,13 @@ packages:
     resolution: {integrity: sha512-XKCahVb/i90PT5UzW4SlE2gw3W5AIFlzL9DV7c7oDyUPGwVae+lSaTYq6JIJS2gfZ2qfMpI7IpuYZfgy7SAsFw==}
     engines: {node: '>=22.18.0'}
 
-  '@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e11cc43ec35ff333bbefd50e8dcb461ee939c102':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e11cc43ec35ff333bbefd50e8dcb461ee939c102}
+  '@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e23f2e1e3db28c5b7e0290949cf99004b689d90c':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e23f2e1e3db28c5b7e0290949cf99004b689d90c}
     version: 0.17.0
     engines: {node: '>=22.18.0'}
 
-  '@kubohiroya/turbowarp-extension-data-editor@https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/76fa1d50a3c188082ceef723ea018a9d8769ea6e':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/76fa1d50a3c188082ceef723ea018a9d8769ea6e}
+  '@kubohiroya/turbowarp-extension-data-editor@https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/485f0e550e622235624b5e9176820161aeeba252':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/485f0e550e622235624b5e9176820161aeeba252}
     version: 0.2.0
     engines: {node: '>=22'}
     peerDependencies:
@@ -1666,14 +1666,14 @@ snapshots:
 
   '@kubohiroya/turbowarp-camera-source@0.7.0': {}
 
-  '@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e11cc43ec35ff333bbefd50e8dcb461ee939c102(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e23f2e1e3db28c5b7e0290949cf99004b689d90c(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@kubohiroya/turbowarp-extension-data-editor': https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/76fa1d50a3c188082ceef723ea018a9d8769ea6e(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@kubohiroya/turbowarp-extension-data-editor': https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/485f0e550e622235624b5e9176820161aeeba252(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - react
       - react-dom
 
-  '@kubohiroya/turbowarp-extension-data-editor@https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/76fa1d50a3c188082ceef723ea018a9d8769ea6e(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@kubohiroya/turbowarp-extension-data-editor@https://codeload.github.com/kubohiroya/turbowarp-extension-data-editor/tar.gz/485f0e550e622235624b5e9176820161aeeba252(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@rjsf/core': 5.24.13(@rjsf/utils@5.24.13(react@18.3.1))(react@18.3.1)
       '@rjsf/utils': 5.24.13(react@18.3.1)
@@ -1690,11 +1690,11 @@ snapshots:
 
   '@kubohiroya/turbowarp-extension-template@0.4.0': {}
 
-  '@kubohiroya/turbowarp-jsqr@0.3.0(@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e11cc43ec35ff333bbefd50e8dcb461ee939c102(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+  '@kubohiroya/turbowarp-jsqr@0.3.0(@kubohiroya/turbowarp-camera-source@https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e23f2e1e3db28c5b7e0290949cf99004b689d90c(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       jsqr: 1.4.0
     optionalDependencies:
-      '@kubohiroya/turbowarp-camera-source': https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e11cc43ec35ff333bbefd50e8dcb461ee939c102(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@kubohiroya/turbowarp-camera-source': https://codeload.github.com/kubohiroya/turbowarp-camera-source/tar.gz/e23f2e1e3db28c5b7e0290949cf99004b689d90c(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   '@kubohiroya/turbowarp-time-space-sync@0.1.0':
     dependencies:

@@ -1,3 +1,7 @@
+import {
+  fixedInputEditors,
+  registerFixedInputEditors,
+} from "./fixed-input-editors.js";
 import { registerSourceEditors } from "./source-editors.js";
 import definitions from "./block-definitions.json";
 import { extensionConfig } from "./config.js";
@@ -169,6 +173,7 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   };
 
   private readonly removeSourceEditors: () => void;
+  private removeFixedEditors: () => void = () => {};
 
   public constructor(options: MultiviewPoseExtensionOptions = {}) {
     // Before anything is built. A combination that would run two
@@ -234,11 +239,28 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
         .filter((block) => this.blockEnabled(block.feature))
         .map((block) => block.opcode),
     );
-    this.runtime.on?.("PROJECT_STOP_ALL", this.stopListener);
-    this.runtime.on?.("PROJECT_RUN_STOP", this.runStopListener);
-    this.runtime.on?.("PROJECT_LOADED", this.stopListener);
-    this.runtime.on?.("RUNTIME_DISPOSED", this.disposeListener);
-    this.runtime.on?.("targetWasRemoved", this.targetRemovedListener);
+    try {
+      const visibleOpcodes = new Set(
+        blockDefinitions
+          .filter((block) => this.blockEnabled(block.feature))
+          .map((block) => `${extensionConfig.id}_${block.opcode}`),
+      );
+      this.removeFixedEditors = registerFixedInputEditors(
+        Scratch,
+        fixedInputEditors.filter((editor) =>
+          editor.opcodes.every((opcode) => visibleOpcodes.has(opcode)),
+        ),
+        this.runtime,
+      );
+      this.runtime.on?.("PROJECT_STOP_ALL", this.stopListener);
+      this.runtime.on?.("PROJECT_RUN_STOP", this.runStopListener);
+      this.runtime.on?.("PROJECT_LOADED", this.stopListener);
+      this.runtime.on?.("RUNTIME_DISPOSED", this.disposeListener);
+      this.runtime.on?.("targetWasRemoved", this.targetRemovedListener);
+    } catch (error) {
+      this.dispose();
+      throw error;
+    }
   }
 
   public getInfo(): Record<string, unknown> {
@@ -1019,6 +1041,7 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
   }
 
   public dispose(): void {
+    this.removeFixedEditors();
     this.removeSourceEditors();
     this.endOfferQrDisplay();
     void this.pose.stop();

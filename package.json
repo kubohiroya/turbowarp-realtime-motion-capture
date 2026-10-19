@@ -50,7 +50,7 @@
     "format": "prettier --write config src tests scripts vite.config.ts",
     "format:check": "prettier --check config src tests scripts vite.config.ts",
     "test": "vitest run",
-    "docs": "node scripts/generate-readme.ts",
+    "docs": "node scripts/generate-readme.ts && node scripts/generate-fixed-input-docs.mjs",
     "docs:check": "pnpm run docs && git diff --exit-code -- README.md docs/turbowarp-extension-api.md",
     "schemas": "node scripts/generate-schemas.ts",
     "schemas:check": "pnpm run schemas && node scripts/check-schemas.ts",
@@ -62,7 +62,7 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@kubohiroya/turbowarp-camera-source": "git+https://github.com/kubohiroya/turbowarp-camera-source.git#e11cc43ec35ff333bbefd50e8dcb461ee939c102",
+    "@kubohiroya/turbowarp-camera-source": "git+https://github.com/kubohiroya/turbowarp-camera-source.git#e23f2e1e3db28c5b7e0290949cf99004b689d90c",
     "@kubohiroya/turbowarp-time-space-sync": "0.1.0",
     "@sinclair/typebox": "0.34.52",
     "@techstark/opencv-js": "4.12.0-release.1",
@@ -72,7 +72,7 @@
     "@tensorflow/tfjs-core": "4.22.0",
     "kalidokit": "1.1.5",
     "qrcode": "1.5.4",
-    "@kubohiroya/turbowarp-extension-data-editor": "git+https://github.com/kubohiroya/turbowarp-extension-data-editor.git#76fa1d50a3c188082ceef723ea018a9d8769ea6e"
+    "@kubohiroya/turbowarp-extension-data-editor": "git+https://github.com/kubohiroya/turbowarp-extension-data-editor.git#485f0e550e622235624b5e9176820161aeeba252"
   },
   "peerDependencies": {
     "@kubohiroya/turbowarp-aframe": "0.5.0",
