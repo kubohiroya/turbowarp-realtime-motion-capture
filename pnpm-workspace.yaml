@@ -5,11 +5,11 @@ overrides:
   'brace-expansion@1.1.18': 1.1.21
 minimumReleaseAgeExclude:
   - '@kubohiroya/turbowarp-aframe@0.8.1'
-  - '@kubohiroya/turbowarp-camera-source@0.17.1'
+  - '@kubohiroya/turbowarp-camera-source@0.17.1 || 0.19.0'
   - '@kubohiroya/turbowarp-extension-data-editor@0.2.1'
   - '@kubohiroya/turbowarp-extension-manifest@0.3.2'
   - '@kubohiroya/turbowarp-extension-template@0.4.2'
-  - '@kubohiroya/turbowarp-jsqr@0.4.1'
-  - '@kubohiroya/turbowarp-time-space-sync@0.3.1'
+  - '@kubohiroya/turbowarp-jsqr@0.4.1 || 0.4.2'
+  - '@kubohiroya/turbowarp-time-space-sync@0.3.1 || 0.3.2'
   - '@kubohiroya/turbowarp-webrtc@0.4.1'
   - '@kubohiroya/vite-plugin-turbowarp-extension@0.6.1'

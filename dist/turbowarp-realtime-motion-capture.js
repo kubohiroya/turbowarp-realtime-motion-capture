@@ -14183,7 +14183,6 @@
   	legacy: bundle(editor_legacy_calibration_default, "editor-legacy-calibration.json", "legacy"),
   	ros: bundle(editor_ros_camera_info_default, "editor-ros-camera-info.json", "ros")
   };
-  Object.fromEntries(Object.entries(cameraProfileSchemaBundles).map(([key, bundle]) => [key, compileSchemaBundle(bundle)]));
   /** Clones a Type */
   function CloneType(schema, options) {
   	return options === void 0 ? Clone(schema) : Clone({
