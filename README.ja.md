@@ -38,7 +38,7 @@ custom extensionとして読み込みます。通常の順序はCamera Source、
 version固定CDN URL:
 
 ```text
-https://cdn.jsdelivr.net/npm/@kubohiroya/turbowarp-realtime-motion-capture@0.8.3/dist/turbowarp-realtime-motion-capture.js
+https://cdn.jsdelivr.net/npm/@kubohiroya/turbowarp-realtime-motion-capture@0.8.4/dist/turbowarp-realtime-motion-capture.js
 ```
 
 npm packageが公開するのはbrowser向けstandalone bundle、schema、文書です。Composition APIは
