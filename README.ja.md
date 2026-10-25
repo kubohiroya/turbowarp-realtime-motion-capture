@@ -2,7 +2,7 @@
 
 <img src="assets/block-icon.svg" alt="" width="48" height="48">
 
-[English](README.md)
+[English](README.md) | 日本語
 
 **ドキュメント:** [TurboWarp機能拡張API](docs/turbowarp-extension-api.ja.md) ·
 [アーキテクチャ](docs/architecture.ja.md) ·
