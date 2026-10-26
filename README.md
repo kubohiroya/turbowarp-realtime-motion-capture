@@ -94,9 +94,10 @@ See the [TurboWarp extension API](docs/turbowarp-extension-api.md) for every blo
 
 ## Development
 
-Use Node.js 22.18 or later and the pnpm version declared in `package.json`.
+Use Node.js 24 or later and the pnpm version declared in `package.json`.
 
 ```bash
+npm install --global corepack@latest
 corepack enable
 pnpm install --frozen-lockfile
 pnpm run check
