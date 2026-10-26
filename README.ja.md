@@ -73,6 +73,7 @@ block上のpart番号は1始まりです。姿勢推定、protocol、calibration
 ## 開発
 
 ```bash
+npm install --global corepack@latest
 corepack enable
 pnpm install --frozen-lockfile
 pnpm run check

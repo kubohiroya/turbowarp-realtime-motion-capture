@@ -9,7 +9,7 @@
     "ja": "README.ja.md"
   },
   "node": {
-    "minimum": "22.18.0"
+    "minimum": "24"
   },
   "packageManager": "pnpm",
   "requiredFiles": [
