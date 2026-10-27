@@ -10,6 +10,18 @@ English | [日本語](README.ja.md)
 
 Composite TurboWarp blocks for camera and fusion applications using multiview pose estimation.
 
+## Runnable sample
+
+[**Open the demo in TurboWarp Editor**](https://turbowarp.org/editor?project_url=https%3A%2F%2Fkubohiroya.github.io%2Fturbowarp-realtime-motion-capture%2Fsamples%2Fpose-protocol-roundtrip.sb3) · [Download the SB3](https://kubohiroya.github.io/turbowarp-realtime-motion-capture/samples/pose-protocol-roundtrip.sb3)
+
+Select **Run without sandbox**, then **Allow**, and click the green flag.
+Valid and roundtrip equal are true; schema is pose-frame-2d, version 1. A fixed, schema-valid PoseFrame2D v1 with zero detected people is encoded and decoded. No camera, WebGPU, external hardware, or credentials are required.
+
+This sample enables only its listed startup flag while constructing the extension, then restores the original global descriptor. The extension defaults remain OFF.
+
+Editable sources and expected results: [`samples/README.md`](samples/README.md).
+`pnpm run samples:build` / `pnpm run samples:check` / `pnpm run pages:build`
+
 ## What it does
 
 - Displays WebRTC offer pairing codes as multipart QR sprites.

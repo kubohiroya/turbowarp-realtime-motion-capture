@@ -1,0 +1,574 @@
+{
+  "targets": [
+    {
+      "isStage": true,
+      "name": "Stage",
+      "variables": {
+        "sample-state": [
+          "Sample state",
+          ""
+        ],
+        "sample-frame": [
+          "Input frame JSON",
+          ""
+        ],
+        "sample-valid": [
+          "Input valid",
+          ""
+        ],
+        "sample-encoded": [
+          "Encoded JSON",
+          ""
+        ],
+        "sample-decoded": [
+          "Decoded JSON",
+          ""
+        ],
+        "sample-roundtrip": [
+          "Roundtrip equal",
+          ""
+        ],
+        "sample-schema": [
+          "Protocol schema",
+          ""
+        ],
+        "sample-version": [
+          "Protocol version",
+          ""
+        ],
+        "sample-error": [
+          "Protocol error",
+          ""
+        ]
+      },
+      "lists": {},
+      "broadcasts": {},
+      "blocks": {
+        "b1": {
+          "opcode": "event_whenflagclicked",
+          "parent": null,
+          "next": "b2",
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": true,
+          "x": 35,
+          "y": 35
+        },
+        "b2": {
+          "opcode": "data_setvariableto",
+          "parent": "b1",
+          "next": "b3",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "Running"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Sample state",
+              "sample-state"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b3": {
+          "opcode": "data_setvariableto",
+          "parent": "b2",
+          "next": "b4",
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "{\"schema\":\"twrmc/pose-frame-2d\",\"version\":1,\"cameraId\":\"camera-1\",\"peerId\":\"source-1\",\"sequence\":42,\"captureTimestampUs\":123456789,\"frameWidth\":640,\"frameHeight\":480,\"calibrationId\":\"calibration-1\",\"persons\":[]}"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Input frame JSON",
+              "sample-frame"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b4": {
+          "opcode": "data_setvariableto",
+          "parent": "b3",
+          "next": "b7",
+          "inputs": {
+            "VALUE": [
+              3,
+              "b5",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Input valid",
+              "sample-valid"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b5": {
+          "opcode": "kubohiroyarealtimemotioncapture_protocolJsonValid",
+          "parent": "b4",
+          "next": null,
+          "inputs": {
+            "JSON": [
+              3,
+              "b6",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b6": {
+          "opcode": "data_variable",
+          "parent": "b5",
+          "next": null,
+          "inputs": {},
+          "fields": {
+            "VARIABLE": [
+              "Input frame JSON",
+              "sample-frame"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b7": {
+          "opcode": "data_setvariableto",
+          "parent": "b4",
+          "next": "b10",
+          "inputs": {
+            "VALUE": [
+              3,
+              "b8",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Encoded JSON",
+              "sample-encoded"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b8": {
+          "opcode": "kubohiroyarealtimemotioncapture_encodeProtocolJson",
+          "parent": "b7",
+          "next": null,
+          "inputs": {
+            "JSON": [
+              3,
+              "b9",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b9": {
+          "opcode": "data_variable",
+          "parent": "b8",
+          "next": null,
+          "inputs": {},
+          "fields": {
+            "VARIABLE": [
+              "Input frame JSON",
+              "sample-frame"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b10": {
+          "opcode": "kubohiroyarealtimemotioncapture_decodeProtocolJson",
+          "parent": "b7",
+          "next": "b12",
+          "inputs": {
+            "JSON": [
+              3,
+              "b11",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b11": {
+          "opcode": "data_variable",
+          "parent": "b10",
+          "next": null,
+          "inputs": {},
+          "fields": {
+            "VARIABLE": [
+              "Encoded JSON",
+              "sample-encoded"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b12": {
+          "opcode": "data_setvariableto",
+          "parent": "b10",
+          "next": "b14",
+          "inputs": {
+            "VALUE": [
+              3,
+              "b13",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Decoded JSON",
+              "sample-decoded"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b13": {
+          "opcode": "kubohiroyarealtimemotioncapture_decodedProtocolJson",
+          "parent": "b12",
+          "next": null,
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b14": {
+          "opcode": "data_setvariableto",
+          "parent": "b12",
+          "next": "b18",
+          "inputs": {
+            "VALUE": [
+              3,
+              "b15",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Roundtrip equal",
+              "sample-roundtrip"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b15": {
+          "opcode": "operator_equals",
+          "parent": "b14",
+          "next": null,
+          "inputs": {
+            "OPERAND1": [
+              3,
+              "b16",
+              [
+                10,
+                ""
+              ]
+            ],
+            "OPERAND2": [
+              3,
+              "b17",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b16": {
+          "opcode": "data_variable",
+          "parent": "b15",
+          "next": null,
+          "inputs": {},
+          "fields": {
+            "VARIABLE": [
+              "Encoded JSON",
+              "sample-encoded"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b17": {
+          "opcode": "data_variable",
+          "parent": "b15",
+          "next": null,
+          "inputs": {},
+          "fields": {
+            "VARIABLE": [
+              "Decoded JSON",
+              "sample-decoded"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b18": {
+          "opcode": "data_setvariableto",
+          "parent": "b14",
+          "next": "b20",
+          "inputs": {
+            "VALUE": [
+              3,
+              "b19",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Protocol schema",
+              "sample-schema"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b19": {
+          "opcode": "kubohiroyarealtimemotioncapture_protocolSchema",
+          "parent": "b18",
+          "next": null,
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b20": {
+          "opcode": "data_setvariableto",
+          "parent": "b18",
+          "next": "b22",
+          "inputs": {
+            "VALUE": [
+              3,
+              "b21",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Protocol version",
+              "sample-version"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b21": {
+          "opcode": "kubohiroyarealtimemotioncapture_protocolVersion",
+          "parent": "b20",
+          "next": null,
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b22": {
+          "opcode": "data_setvariableto",
+          "parent": "b20",
+          "next": "b24",
+          "inputs": {
+            "VALUE": [
+              3,
+              "b23",
+              [
+                10,
+                ""
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Protocol error",
+              "sample-error"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        },
+        "b23": {
+          "opcode": "kubohiroyarealtimemotioncapture_protocolErrorMessage",
+          "parent": "b22",
+          "next": null,
+          "inputs": {},
+          "fields": {},
+          "shadow": false,
+          "topLevel": false
+        },
+        "b24": {
+          "opcode": "data_setvariableto",
+          "parent": "b22",
+          "next": null,
+          "inputs": {
+            "VALUE": [
+              1,
+              [
+                10,
+                "Ready"
+              ]
+            ]
+          },
+          "fields": {
+            "VARIABLE": [
+              "Sample state",
+              "sample-state"
+            ]
+          },
+          "shadow": false,
+          "topLevel": false
+        }
+      },
+      "comments": {},
+      "currentCostume": 0,
+      "costumes": [
+        {
+          "assetId": "",
+          "name": "Instructions",
+          "bitmapResolution": 1,
+          "md5ext": "backdrop.svg",
+          "dataFormat": "svg",
+          "rotationCenterX": 240,
+          "rotationCenterY": 180
+        }
+      ],
+      "sounds": [],
+      "volume": 100,
+      "layerOrder": 0,
+      "tempo": 60,
+      "videoTransparency": 50,
+      "videoState": "off",
+      "textToSpeechLanguage": null
+    }
+  ],
+  "monitors": [
+    {
+      "id": "sample-valid",
+      "mode": "default",
+      "opcode": "data_variable",
+      "params": {
+        "VARIABLE": "Input valid"
+      },
+      "spriteName": null,
+      "value": "",
+      "width": 0,
+      "height": 0,
+      "x": 18,
+      "y": 115,
+      "visible": true,
+      "sliderMin": 0,
+      "sliderMax": 100,
+      "isDiscrete": true
+    },
+    {
+      "id": "sample-roundtrip",
+      "mode": "default",
+      "opcode": "data_variable",
+      "params": {
+        "VARIABLE": "Roundtrip equal"
+      },
+      "spriteName": null,
+      "value": "",
+      "width": 0,
+      "height": 0,
+      "x": 18,
+      "y": 148,
+      "visible": true,
+      "sliderMin": 0,
+      "sliderMax": 100,
+      "isDiscrete": true
+    },
+    {
+      "id": "sample-schema",
+      "mode": "default",
+      "opcode": "data_variable",
+      "params": {
+        "VARIABLE": "Protocol schema"
+      },
+      "spriteName": null,
+      "value": "",
+      "width": 0,
+      "height": 0,
+      "x": 18,
+      "y": 181,
+      "visible": true,
+      "sliderMin": 0,
+      "sliderMax": 100,
+      "isDiscrete": true
+    },
+    {
+      "id": "sample-version",
+      "mode": "default",
+      "opcode": "data_variable",
+      "params": {
+        "VARIABLE": "Protocol version"
+      },
+      "spriteName": null,
+      "value": "",
+      "width": 0,
+      "height": 0,
+      "x": 18,
+      "y": 214,
+      "visible": true,
+      "sliderMin": 0,
+      "sliderMax": 100,
+      "isDiscrete": true
+    }
+  ],
+  "extensions": [],
+  "meta": {
+    "semver": "3.0.0",
+    "vm": "0.2.0",
+    "agent": "TurboWarp Plus minimal samples"
+  }
+}

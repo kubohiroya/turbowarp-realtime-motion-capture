@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - samples/**
+      - dist/**
+      - src/block-definitions.json
+      - scripts/build-samples.mjs
+      - scripts/prepare-pages.mjs
       - "schemas/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
@@ -27,12 +32,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: Prepare Pages artifact
-        run: |
-          mkdir -p _site/schema
-          cp -R docs/. _site/
-          cp schemas/*.json _site/schema/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Verify samples and prepare site
+        run: node scripts/prepare-pages.mjs
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
       - name: Deploy to GitHub Pages

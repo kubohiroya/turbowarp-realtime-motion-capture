@@ -10,6 +10,18 @@
 
 multiview pose estimationを使うcamera／fusion application向けの複合TurboWarp機能拡張です。
 
+## 実行できるサンプル
+
+[**TurboWarp Editorでデモを開く**](https://turbowarp.org/editor?project_url=https%3A%2F%2Fkubohiroya.github.io%2Fturbowarp-realtime-motion-capture%2Fsamples%2Fpose-protocol-roundtrip.sb3) · [SB3をダウンロード](https://kubohiroya.github.io/turbowarp-realtime-motion-capture/samples/pose-protocol-roundtrip.sb3)
+
+**Run without sandbox**を選び**Allow**し、緑の旗を押します。
+入力検証と往復一致がtrue、schemaがtwrmc/pose-frame-2d、versionが1になります。固定の人物0人の仕様適合PoseFrame2D v1 JSONを使います。カメラ・WebGPU・外部機器・認証情報は不要です。
+
+このサンプルの起動設定だけを拡張構築中に有効にし、直後に元のglobal descriptorへ復元します。本体の既定OFFは変更しません。
+
+元データと期待結果: [`samples/README.md`](samples/README.md).
+`pnpm run samples:build` / `pnpm run samples:check` / `pnpm run pages:build`
+
 ## できること
 
 - WebRTC offer pairing codeを複数のQR spriteとして表示します。
