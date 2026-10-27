@@ -1,0 +1,87 @@
+{
+  "baseURL": "https://kubohiroya.github.io/turbowarp-realtime-motion-capture/",
+  "extension": {
+    "id": "kubohiroyarealtimemotioncapture",
+    "bundle": "dist/turbowarp-realtime-motion-capture.js",
+    "unsandboxed": true,
+    "startupFlags": {
+      "__TWMP_FEATURE_FLAGS__": {
+        "protocolV1Codec": true
+      }
+    }
+  },
+  "samples": [
+    {
+      "name": "pose-protocol-roundtrip",
+      "title": "Realtime Motion Capture minimal demo",
+      "checks": [
+        {
+          "variable": "sample-frame",
+          "jsonEquals": {
+            "schema": "twrmc/pose-frame-2d",
+            "version": 1,
+            "cameraId": "camera-1",
+            "peerId": "source-1",
+            "sequence": 42,
+            "captureTimestampUs": 123456789,
+            "frameWidth": 640,
+            "frameHeight": 480,
+            "calibrationId": "calibration-1",
+            "persons": []
+          }
+        },
+        {
+          "variable": "sample-valid",
+          "equals": true
+        },
+        {
+          "variable": "sample-encoded",
+          "jsonEquals": {
+            "schema": "twrmc/pose-frame-2d",
+            "version": 1,
+            "cameraId": "camera-1",
+            "peerId": "source-1",
+            "sequence": 42,
+            "captureTimestampUs": 123456789,
+            "frameWidth": 640,
+            "frameHeight": 480,
+            "calibrationId": "calibration-1",
+            "persons": []
+          }
+        },
+        {
+          "variable": "sample-decoded",
+          "jsonEquals": {
+            "schema": "twrmc/pose-frame-2d",
+            "version": 1,
+            "cameraId": "camera-1",
+            "peerId": "source-1",
+            "sequence": 42,
+            "captureTimestampUs": 123456789,
+            "frameWidth": 640,
+            "frameHeight": 480,
+            "calibrationId": "calibration-1",
+            "persons": []
+          }
+        },
+        {
+          "variable": "sample-roundtrip",
+          "equals": true
+        },
+        {
+          "variable": "sample-schema",
+          "equals": "twrmc/pose-frame-2d"
+        },
+        {
+          "variable": "sample-version",
+          "equals": 1
+        },
+        {
+          "variable": "sample-error",
+          "equals": ""
+        }
+      ],
+      "instructions": "Valid and roundtrip equal are true; schema is pose-frame-2d, version 1."
+    }
+  ]
+}

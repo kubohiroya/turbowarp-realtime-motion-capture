@@ -11,3 +11,6 @@ coverage/
 .serena/
 
 lib-editor/
+
+# Staged GitHub Pages artifact.
+_site/
