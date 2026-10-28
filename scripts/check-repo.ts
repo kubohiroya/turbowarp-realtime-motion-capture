@@ -10,7 +10,7 @@ interface PackageMetadata {
   name: string;
   version: string;
   description?: string;
-  author?: string;
+  author?: { name: string; email: string; url: string };
   license?: string;
   homepage?: string;
   packageManager?: string;
@@ -128,9 +128,20 @@ function checkPolicy() {
 }
 
 function checkPackageMetadata() {
+  if (
+    typeof packageMetadata.author !== "object" ||
+    packageMetadata.author === null ||
+    Array.isArray(packageMetadata.author) ||
+    packageMetadata.author.name !== "Hiroya Kubo" ||
+    packageMetadata.author.email !== "hiroya@cuc.ac.jp" ||
+    packageMetadata.author.url !== "https://github.com/kubohiroya"
+  ) {
+    errors.push(
+      "package.json author must use the approved name, email, and URL",
+    );
+  }
   const requiredStrings = [
     "description",
-    "author",
     "license",
     "homepage",
     "packageManager",
@@ -315,10 +326,10 @@ function checkAvatarPolicy() {
   }
   if (
     packageMetadata.peerDependencies?.["@kubohiroya/turbowarp-aframe"] !==
-    "^0.10.0"
+    "^0.11.0"
   ) {
     errors.push(
-      "package.json must use the TurboWarp-A-Frame peer caret range ^0.10.0",
+      "package.json must use the TurboWarp-A-Frame peer caret range ^0.11.0",
     );
   }
   if (!featureFlagSource.includes("avatarRetargetV1")) {
