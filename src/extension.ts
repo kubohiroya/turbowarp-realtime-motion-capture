@@ -166,11 +166,14 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     this.runStopListener();
     this.fusion.stop();
   };
-  /** Every project load disposes the runtime; only the editor registrations come back after it. */
+  /**
+   * Every project load disposes the runtime while the extension stays loaded, so this only stops
+   * the project's work. The runtime listeners stay; the editor registrations come back on load.
+   */
   private readonly disposeListener = () => {
     this.removeEditors();
     this.editorsReleased = true;
-    this.tearDown();
+    this.stopListener();
   };
   private readonly projectLoadedListener = () => {
     if (this.editorsReleased) {
