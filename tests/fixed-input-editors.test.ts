@@ -1575,3 +1575,74 @@ it("matches owner numeric range boundaries without strengthening clamp or runtim
     ).toBe(row.expected);
   }
 });
+it("registers the editors again for each project the extension stays loaded for", () => {
+  // Every project load disposes the runtime, which releases the registrations, but keeps the extension loaded.
+  const fixedRemoves: Array<ReturnType<typeof vi.fn>> = [];
+  const sourceRemoves: Array<ReturnType<typeof vi.fn>> = [];
+  const registerFixedInputEditor = vi.fn(() => {
+    const remove = vi.fn();
+    fixedRemoves.push(remove);
+    return remove;
+  });
+  const registerSourceEditor = vi.fn(() => {
+    const remove = vi.fn();
+    sourceRemoves.push(remove);
+    return remove;
+  });
+  const host = scratchHost({
+    apiVersion: 1,
+    registerFixedInputEditor,
+    registerSourceEditor,
+  });
+  const emit = (event: string) => {
+    for (const f of [...(host.callbacks.get(event) ?? [])]) f();
+  };
+  vi.stubGlobal("Scratch", host);
+  try {
+    const instance = new MultiviewPoseExtension({
+      enabled: true,
+      poseEnabled: true,
+      protocolEnabled: true,
+      calibrationEnabled: true,
+      avatarEnabled: true,
+      frameSyncEnabled: true,
+      fusionEnabled: true,
+      markersEnabled: true,
+      timeSpaceSyncDelegated: false,
+      calibrationDelegated: false,
+    });
+    const fixedCount = registerFixedInputEditor.mock.calls.length;
+    const sourceCount = registerSourceEditor.mock.calls.length;
+    expect(fixedCount).toBeGreaterThan(0);
+    expect(sourceCount).toBeGreaterThan(0);
+    emit("RUNTIME_DISPOSED");
+    for (const remove of [...fixedRemoves, ...sourceRemoves])
+      expect(remove).toHaveBeenCalledTimes(1);
+    emit("PROJECT_LOADED");
+    expect(registerFixedInputEditor).toHaveBeenCalledTimes(fixedCount * 2);
+    expect(registerSourceEditor).toHaveBeenCalledTimes(sourceCount * 2);
+    for (const remove of [
+      ...fixedRemoves.slice(fixedCount),
+      ...sourceRemoves.slice(sourceCount),
+    ])
+      expect(remove).not.toHaveBeenCalled();
+    emit("PROJECT_LOADED");
+    expect(registerFixedInputEditor).toHaveBeenCalledTimes(fixedCount * 2);
+    expect(registerSourceEditor).toHaveBeenCalledTimes(sourceCount * 2);
+    emit("RUNTIME_DISPOSED");
+    emit("PROJECT_LOADED");
+    expect(registerFixedInputEditor).toHaveBeenCalledTimes(fixedCount * 3);
+    expect(registerSourceEditor).toHaveBeenCalledTimes(sourceCount * 3);
+    instance.dispose();
+    for (const remove of [...fixedRemoves, ...sourceRemoves])
+      expect(remove).toHaveBeenCalledTimes(1);
+    emit("RUNTIME_DISPOSED");
+    emit("PROJECT_LOADED");
+    expect(registerFixedInputEditor).toHaveBeenCalledTimes(fixedCount * 3);
+    expect(registerSourceEditor).toHaveBeenCalledTimes(sourceCount * 3);
+    for (const listeners of host.callbacks.values())
+      expect(listeners.size).toBe(0);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
