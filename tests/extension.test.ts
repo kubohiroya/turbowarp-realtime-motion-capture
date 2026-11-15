@@ -638,6 +638,59 @@ describe("MultiviewPoseExtension offer QR blocks", () => {
     expect(dispose).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps stop and target-removal handling after another project is loaded", async () => {
+    const { runtime, listeners, target, renderer } = setup();
+    const release = vi.fn(async () => undefined);
+    runtime.ext_kubohiroyacamerasource = {
+      acquireCamera: vi.fn(async () => ({
+        getFrameSource: vi.fn(() => ({
+          kind: "video" as const,
+          element: {} as HTMLVideoElement,
+          width: 640,
+          height: 480,
+          mirrored: false,
+          deviceId: "device-1",
+        })),
+        release,
+      })),
+    };
+    const poseModel = {
+      initializeWebGpu: vi.fn(async () => undefined),
+      backend: vi.fn(() => "webgpu"),
+      createMultiPoseDetector: vi.fn(async () => ({
+        estimatePoses: vi.fn(async () => []),
+        dispose: vi.fn(),
+      })),
+    };
+    const extension = new MultiviewPoseExtension({
+      runtime,
+      enabled: true,
+      poseEnabled: true,
+      poseModel,
+    });
+    const start = () =>
+      extension.startWebGpuMoveNetMultiPose({
+        CAMERA_ID: "pose",
+        PEER_ID: "source-1",
+        CALIBRATION_ID: "calibration-1",
+      });
+    listeners.get("RUNTIME_DISPOSED")?.();
+    listeners.get("PROJECT_LOADED")?.();
+
+    await start();
+    listeners.get("PROJECT_STOP_ALL")?.();
+    await vi.waitFor(() => expect(release).toHaveBeenCalledOnce());
+
+    await start();
+    listeners.get("PROJECT_RUN_STOP")?.();
+    await vi.waitFor(() => expect(release).toHaveBeenCalledTimes(2));
+
+    await extension.createAndShowOfferQr({ PEER: "camera-1" }, { target });
+    listeners.get("targetWasRemoved")?.(target);
+    expect(renderer.created.size).toBe(0);
+    expect(extension.offerQrPartCount()).toBe(0);
+  });
+
   it("releases calibration camera leases on project reload and disposal", async () => {
     const { runtime, listeners } = setup();
     const release = vi.fn(async () => undefined);

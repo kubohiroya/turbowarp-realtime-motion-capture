@@ -93122,7 +93122,7 @@ var MultiviewPoseExtension = class {
 		this.disposeListener = () => {
 			this.removeEditors();
 			this.editorsReleased = true;
-			this.tearDown();
+			this.stopListener();
 		};
 		this.projectLoadedListener = () => {
 			if (this.editorsReleased) {
