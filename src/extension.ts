@@ -166,14 +166,38 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     this.runStopListener();
     this.fusion.stop();
   };
-  private readonly disposeListener = () => this.dispose();
+  /** Every project load disposes the runtime; only the editor registrations come back after it. */
+  private readonly disposeListener = () => {
+    this.removeEditors();
+    this.editorsReleased = true;
+    this.tearDown();
+  };
+  private readonly projectLoadedListener = () => {
+    if (this.editorsReleased) {
+      this.editorsReleased = false;
+      try {
+        this.registerEditors();
+      } catch (error) {
+        this.removeEditors();
+        this.editorsReleased = true;
+        throw error;
+      }
+    }
+    this.stopListener();
+  };
   private readonly targetRemovedListener = (target: unknown) => {
     if (isTarget(target) && this.skins.isDisplaying(target))
       this.endOfferQrDisplay();
   };
 
-  private readonly removeSourceEditors: () => void;
+  private removeSourceEditors: () => void = () => {};
   private removeFixedEditors: () => void = () => {};
+  private readonly nowMilliseconds: (() => number) | undefined;
+  /**
+   * Loading a project disposes the runtime, which releases the editor registrations, but the
+   * extension stays loaded for the next project. Register them again once that project has loaded.
+   */
+  private editorsReleased = false;
 
   public constructor(options: MultiviewPoseExtensionOptions = {}) {
     // Before anything is built. A combination that would run two
@@ -231,30 +255,12 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     this.frameSync = options.frameSyncController;
     this.frameSyncOverlay = options.frameSyncDisplay;
     this.fusion = new PoseFusionController();
-    this.removeSourceEditors = registerSourceEditors(
-      Scratch,
-      this.calibrationDelegated,
-      options.nowMilliseconds,
-      blockDefinitions
-        .filter((block) => this.blockEnabled(block.feature))
-        .map((block) => block.opcode),
-    );
+    this.nowMilliseconds = options.nowMilliseconds;
     try {
-      const visibleOpcodes = new Set(
-        blockDefinitions
-          .filter((block) => this.blockEnabled(block.feature))
-          .map((block) => `${extensionConfig.id}_${block.opcode}`),
-      );
-      this.removeFixedEditors = registerFixedInputEditors(
-        Scratch,
-        fixedInputEditors.filter((editor) =>
-          editor.opcodes.every((opcode) => visibleOpcodes.has(opcode)),
-        ),
-        this.runtime,
-      );
+      this.registerEditors();
       this.runtime.on?.("PROJECT_STOP_ALL", this.stopListener);
       this.runtime.on?.("PROJECT_RUN_STOP", this.runStopListener);
-      this.runtime.on?.("PROJECT_LOADED", this.stopListener);
+      this.runtime.on?.("PROJECT_LOADED", this.projectLoadedListener);
       this.runtime.on?.("RUNTIME_DISPOSED", this.disposeListener);
       this.runtime.on?.("targetWasRemoved", this.targetRemovedListener);
     } catch (error) {
@@ -1040,9 +1046,44 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     return this.markersEnabled ? this.fusion.mirrorCorrectedViewCount() : 0;
   }
 
+  /** Final disposal by the owner: nothing registers again after it. */
   public dispose(): void {
+    this.runtime.off?.("PROJECT_LOADED", this.projectLoadedListener);
+    this.runtime.off?.("RUNTIME_DISPOSED", this.disposeListener);
+    this.editorsReleased = false;
+    this.removeEditors();
+    this.tearDown();
+  }
+
+  private registerEditors(): void {
+    this.removeSourceEditors = registerSourceEditors(
+      Scratch,
+      this.calibrationDelegated,
+      this.nowMilliseconds,
+      blockDefinitions
+        .filter((block) => this.blockEnabled(block.feature))
+        .map((block) => block.opcode),
+    );
+    const visibleOpcodes = new Set(
+      blockDefinitions
+        .filter((block) => this.blockEnabled(block.feature))
+        .map((block) => `${extensionConfig.id}_${block.opcode}`),
+    );
+    this.removeFixedEditors = registerFixedInputEditors(
+      Scratch,
+      fixedInputEditors.filter((editor) =>
+        editor.opcodes.every((opcode) => visibleOpcodes.has(opcode)),
+      ),
+      this.runtime,
+    );
+  }
+
+  private removeEditors(): void {
     this.removeFixedEditors();
     this.removeSourceEditors();
+  }
+
+  private tearDown(): void {
     this.endOfferQrDisplay();
     void this.pose.stop();
     void this.poseCameras.stopAll();
@@ -1053,8 +1094,6 @@ export class MultiviewPoseExtension implements TurboWarpExtension {
     this.fusion.stop();
     this.runtime.off?.("PROJECT_STOP_ALL", this.stopListener);
     this.runtime.off?.("PROJECT_RUN_STOP", this.runStopListener);
-    this.runtime.off?.("PROJECT_LOADED", this.stopListener);
-    this.runtime.off?.("RUNTIME_DISPOSED", this.disposeListener);
     this.runtime.off?.("targetWasRemoved", this.targetRemovedListener);
   }
 
