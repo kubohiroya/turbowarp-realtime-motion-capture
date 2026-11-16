@@ -13,23 +13,23 @@ importers:
   .:
     dependencies:
       '@kubohiroya/turbowarp-aframe':
-        specifier: ^0.11.0
-        version: 0.11.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.12.1
+        version: 0.12.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@kubohiroya/turbowarp-camera-source':
-        specifier: ^0.22.0
-        version: 0.22.0
+        specifier: ^0.23.2
+        version: 0.23.2
       '@kubohiroya/turbowarp-extension-data-editor':
-        specifier: ^0.5.0
-        version: 0.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.10.0
+        version: 0.10.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@kubohiroya/turbowarp-jsqr':
-        specifier: ^0.7.0
-        version: 0.7.0(@kubohiroya/turbowarp-camera-source@0.22.0)(@types/emscripten@1.41.6)
+        specifier: ^0.8.0
+        version: 0.8.0(@kubohiroya/turbowarp-camera-source@0.23.2)(@types/emscripten@1.41.6)
       '@kubohiroya/turbowarp-time-space-sync':
-        specifier: ^0.6.0
-        version: 0.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.6.1
+        version: 0.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@kubohiroya/turbowarp-webrtc':
-        specifier: ^0.7.0
-        version: 0.7.0
+        specifier: ^0.7.2
+        version: 0.7.2
       '@sinclair/typebox':
         specifier: 0.34.52
         version: 0.34.52
@@ -62,11 +62,11 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0
       '@kubohiroya/turbowarp-extension-template':
-        specifier: ^0.8.0
-        version: 0.8.0
+        specifier: ^0.9.0
+        version: 0.9.0
       '@kubohiroya/vite-plugin-turbowarp-extension':
-        specifier: ^0.10.0
-        version: 0.10.0(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(yaml@2.9.1))
+        specifier: ^0.11.0
+        version: 0.11.0(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(yaml@2.9.1))
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3
@@ -317,16 +317,44 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@kubohiroya/turbowarp-aframe@0.11.0':
-    resolution: {integrity: sha512-VYeqSNU+apkAwj/374JoV3Sc+QbtbAnai7lbWTCrbWekEXAVbRrL7wY7/HxMWcBkZuxlo99MoSwd+51tWv4Kdw==}
+  '@kubohiroya/turbowarp-aframe@0.12.1':
+    resolution: {integrity: sha512-uS2eQLHNTTsHqFkYKxeb1hK2JqRsnEIxWO9sluQqC6pdM4seZW7W4wM1OzEO9VfeTKSvM084H6tFZNDo6lXrQQ==}
     engines: {node: '>=24'}
 
   '@kubohiroya/turbowarp-camera-source@0.22.0':
     resolution: {integrity: sha512-1Gc9VP4ZZZFP5mN9Cl1yuN/pw6d2UFrBIUEo3U1HNguJSXPL3kxpKCR2GiXLipsv15aKysAPh9LlWAXc7tCAkQ==}
     engines: {node: '>=24'}
 
+  '@kubohiroya/turbowarp-camera-source@0.23.2':
+    resolution: {integrity: sha512-/Q+BEtRNtp+nwVdjKAfTouRPcLuM3MwymgRgFG4iafqFfvcQuzC8kVYEqs/4MrqkTzt3vUrUI+haMrSiyK/dqQ==}
+    engines: {node: '>=24'}
+
+  '@kubohiroya/turbowarp-extension-data-editor@0.10.0':
+    resolution: {integrity: sha512-21IQC6PbnIBExYykbzQ9UF709Cl9kgLL6foKcktpeKFGoKs/pVauWUQErvjYc9bxCVcJTEFV2DKgZ4uqExvBng==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      react: ^16.14.0 || ^17 || ^18
+      react-dom: ^16.14.0 || ^17 || ^18
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
   '@kubohiroya/turbowarp-extension-data-editor@0.5.0':
     resolution: {integrity: sha512-MltTv+sDgmWXS9RDl8Ea1oPpISycTPq4h3hevZ6aVBkuFQB/2JiRekYK2CkIazj+L6w3egLV6HekDmP4vtVaUQ==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      react: ^16.14.0 || ^17 || ^18
+      react-dom: ^16.14.0 || ^17 || ^18
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
+  '@kubohiroya/turbowarp-extension-data-editor@0.8.2':
+    resolution: {integrity: sha512-r1e5NHzQBlBTWOJNkjM7/PKH/CMws4u0PTIxGG0Q8/I3n1I61AyjApfJaWxJRBThgLbCQt5rpEXarMCBi9Agfg==}
     engines: {node: '>=24'}
     peerDependencies:
       react: ^16.14.0 || ^17 || ^18
@@ -341,29 +369,29 @@ packages:
     resolution: {integrity: sha512-YD8fwGTwTC6oMinmVLRp5+x/6piKLTYNraKnsc+oEi/w6NFdePm1ocV8eHnBBMcqEO2usr2mI/0qnV66Ex35YA==}
     engines: {node: '>=24'}
 
-  '@kubohiroya/turbowarp-extension-template@0.8.0':
-    resolution: {integrity: sha512-nmUTej3Ez4EnK+7kqejmxXOcjMkVqip6y4DvbZys7t6nxfcicvaeY7TMr5nCLWtNmWoi3v1ezEniLjgz4xOGIw==}
+  '@kubohiroya/turbowarp-extension-template@0.9.0':
+    resolution: {integrity: sha512-ldwUHTUdjOGjGQKJOA4c9xsQG731fv/dvO2TuEBa71Ul3UIML260JNFRK5As2wFJ7Mw7SayChFBxkBgtE4UeMg==}
     engines: {node: '>=24'}
 
-  '@kubohiroya/turbowarp-jsqr@0.7.0':
-    resolution: {integrity: sha512-REqFK7tOsYRjBy6mTLaAApAeX13DmZrHoOaMnCqWiVvUuNLyGGFHqp3vET+viyEzotN+nl5C/IixruIobA7+TQ==}
+  '@kubohiroya/turbowarp-jsqr@0.8.0':
+    resolution: {integrity: sha512-cGQi0wc1Hm4xbr39xbU8aXdVDD6Ka9guZLXRUtw7mCDNy/fAzt8bzRjqf8IbsYyV3ynEzkjiKoxRP26AT7lHuA==}
     engines: {node: '>=24'}
     peerDependencies:
-      '@kubohiroya/turbowarp-camera-source': ^0.22.0
+      '@kubohiroya/turbowarp-camera-source': ^0.23.0
     peerDependenciesMeta:
       '@kubohiroya/turbowarp-camera-source':
         optional: true
 
-  '@kubohiroya/turbowarp-time-space-sync@0.6.0':
-    resolution: {integrity: sha512-4FA6d0+dYWJzT9irmkvwX3VZt4TOpg/qHKJK7xLwXnpEzz1UHdy3gDUnsq7ewxSg6SxKGHAoKYsvVKVh12Ofug==}
+  '@kubohiroya/turbowarp-time-space-sync@0.6.1':
+    resolution: {integrity: sha512-mvFOg9UrU8rtWPl/Kt8WDpHoZsa05gd9zr+YtjRxn4eY9BkTEmRKg3iHf1ONURIbAcn8HgjU4Sf/XnBTbTSDwg==}
     engines: {node: '>=24'}
 
-  '@kubohiroya/turbowarp-webrtc@0.7.0':
-    resolution: {integrity: sha512-Gf//8AcTmpVjrA3vOmb7bWI5t9BmebUoiI5AxWLBaA77MI0z+UE4gHyTkQJFtB6Vw7SREzL8BnLcfQhfTvhPSg==}
+  '@kubohiroya/turbowarp-webrtc@0.7.2':
+    resolution: {integrity: sha512-Un3njw+7oH2nOYFG4QeTFMkF3HjDPnNzmXnv/GwHR/TPRdQ4C8brWJfFez9dIgaMz0nhtKKBsGz1i2eIg0l5AA==}
     engines: {node: '>=24'}
 
-  '@kubohiroya/vite-plugin-turbowarp-extension@0.10.0':
-    resolution: {integrity: sha512-N/c1gsmOS9dozskUzmSLRwqVZzOLDGs44cOPBv2VdITR2v//TFQKlNw3jhBLVeyMfdlfAICwrpvC74xFgZxrNA==}
+  '@kubohiroya/vite-plugin-turbowarp-extension@0.11.0':
+    resolution: {integrity: sha512-jk6CxthocSB5wqWYwoKHdwbHq9iBxqlkXjz7CeWr5KgLTVp49ywA7iREYG1MbAVhkpsWVxm7THLRF5E/mD2v6Q==}
     engines: {node: '>=24'}
     peerDependencies:
       vite: '>=8.0.0'
@@ -1672,14 +1700,29 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@kubohiroya/turbowarp-aframe@0.11.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@kubohiroya/turbowarp-aframe@0.12.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@kubohiroya/turbowarp-extension-data-editor': 0.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@kubohiroya/turbowarp-extension-data-editor': 0.8.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - react
       - react-dom
 
   '@kubohiroya/turbowarp-camera-source@0.22.0': {}
+
+  '@kubohiroya/turbowarp-camera-source@0.23.2': {}
+
+  '@kubohiroya/turbowarp-extension-data-editor@0.10.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rjsf/core': 5.24.13(@rjsf/utils@5.24.13(react@18.3.1))(react@18.3.1)
+      '@rjsf/utils': 5.24.13(react@18.3.1)
+      '@rjsf/validator-ajv8': 5.24.13(@rjsf/utils@5.24.13(react@18.3.1))
+      ajv: 8.20.0
+      ajv-formats: 2.1.1
+      fast-uri: 3.1.8
+      yaml: 2.9.1
+    optionalDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   '@kubohiroya/turbowarp-extension-data-editor@0.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -1694,19 +1737,32 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@kubohiroya/turbowarp-extension-data-editor@0.8.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rjsf/core': 5.24.13(@rjsf/utils@5.24.13(react@18.3.1))(react@18.3.1)
+      '@rjsf/utils': 5.24.13(react@18.3.1)
+      '@rjsf/validator-ajv8': 5.24.13(@rjsf/utils@5.24.13(react@18.3.1))
+      ajv: 8.20.0
+      ajv-formats: 2.1.1
+      fast-uri: 3.1.8
+      yaml: 2.9.1
+    optionalDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   '@kubohiroya/turbowarp-extension-manifest@0.5.0': {}
 
-  '@kubohiroya/turbowarp-extension-template@0.8.0': {}
+  '@kubohiroya/turbowarp-extension-template@0.9.0': {}
 
-  '@kubohiroya/turbowarp-jsqr@0.7.0(@kubohiroya/turbowarp-camera-source@0.22.0)(@types/emscripten@1.41.6)':
+  '@kubohiroya/turbowarp-jsqr@0.8.0(@kubohiroya/turbowarp-camera-source@0.23.2)(@types/emscripten@1.41.6)':
     dependencies:
       zxing-wasm: 3.1.4(@types/emscripten@1.41.6)
     optionalDependencies:
-      '@kubohiroya/turbowarp-camera-source': 0.22.0
+      '@kubohiroya/turbowarp-camera-source': 0.23.2
     transitivePeerDependencies:
       - '@types/emscripten'
 
-  '@kubohiroya/turbowarp-time-space-sync@0.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@kubohiroya/turbowarp-time-space-sync@0.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@kubohiroya/turbowarp-camera-source': 0.22.0
       '@kubohiroya/turbowarp-extension-data-editor': 0.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1714,9 +1770,9 @@ snapshots:
       - react
       - react-dom
 
-  '@kubohiroya/turbowarp-webrtc@0.7.0': {}
+  '@kubohiroya/turbowarp-webrtc@0.7.2': {}
 
-  '@kubohiroya/vite-plugin-turbowarp-extension@0.10.0(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(yaml@2.9.1))':
+  '@kubohiroya/vite-plugin-turbowarp-extension@0.11.0(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(yaml@2.9.1))':
     dependencies:
       acorn: 8.18.0
       vite: 8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(yaml@2.9.1)
