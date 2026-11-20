@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-realtime-motion-capture",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "description": "A TurboWarp camera and fusion pipeline for WebGPU multi-person pose estimation over WebRTC.",
   "author": {
     "name": "Hiroya Kubo",
@@ -119,6 +119,51 @@
     "./editor-schema": {
       "types": "./lib-editor/src/editor-schema.d.ts",
       "import": "./lib-editor/src/editor-schema.js"
+    }
+  },
+  "turbowarpExtension": {
+    "resourceDeclaration": {
+      "schemaVersion": 1,
+      "resources": [
+        {
+          "type": "camera",
+          "usage": "conditional",
+          "purpose": {
+            "en": "Read shared frames for pose estimation, calibration and optical measurements",
+            "ja": "姿勢推定・校正・光学計測用に共有映像を読み取る"
+          },
+          "condition": {
+            "en": "When a camera feature, off by default, is enabled at startup and used",
+            "ja": "既定OFFのカメラ利用機能を起動時に有効にして使う場合"
+          },
+          "via": [
+            "@kubohiroya/turbowarp-camera-source"
+          ]
+        },
+        {
+          "type": "network",
+          "usage": "conditional",
+          "purpose": {
+            "en": "Download pose models or use WebRTC and externally referenced avatar assets",
+            "ja": "姿勢モデルの取得、WebRTC通信、外部アバター素材の取得を行う"
+          },
+          "condition": {
+            "en": "When the relevant startup feature is enabled and its model, peer or avatar path is used",
+            "ja": "該当する起動時フラグを有効にし、モデル・端末接続・アバター機能を使う場合"
+          },
+          "via": [
+            "@kubohiroya/turbowarp-webrtc",
+            "@kubohiroya/turbowarp-aframe"
+          ],
+          "data": {
+            "direction": "bidirectional",
+            "content": {
+              "en": "Model/avatar downloads and project-defined peer connection data; enabling pose inference alone does not upload camera frames",
+              "ja": "モデル・アバターの取得と、作品が指定する端末間接続データ。姿勢推定を有効にしただけではカメラ映像を送信しない"
+            }
+          }
+        }
+      ]
     }
   }
 }
