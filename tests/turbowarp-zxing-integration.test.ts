@@ -4,12 +4,12 @@ import { createQrCourierParts } from "../src/qr-courier.js";
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("TurboWarp jsQR integration", () => {
+describe("TurboWarp ZXing integration", () => {
   it("decodes every generated part through the published extension scanFrame API", async () => {
     const result = await createQrCourierParts("C".repeat(6000), {
       peerId: "camera-1",
       kind: "offer",
-      sessionId: "jsqr-integration",
+      sessionId: "zxing-integration",
       createdAt: 1000,
     });
     let scanner:
@@ -30,7 +30,7 @@ describe("TurboWarp jsQR integration", () => {
         typeof value === "string" ? value : value.default,
     });
 
-    await import("@kubohiroya/turbowarp-jsqr/jsqr.js");
+    await import("@kubohiroya/turbowarp-zxing/zxing.js");
     expect(scanner).toBeDefined();
 
     let image: ReturnType<typeof rasterize>;
