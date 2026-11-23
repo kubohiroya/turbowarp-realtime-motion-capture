@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-realtime-motion-capture",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "A TurboWarp camera and fusion pipeline for WebGPU multi-person pose estimation over WebRTC.",
   "author": {
     "name": "Hiroya Kubo",
@@ -70,8 +70,8 @@
     "pages:build": "node scripts/prepare-pages.mjs"
   },
   "dependencies": {
-    "@kubohiroya/turbowarp-camera-source": "^0.25.0",
-    "@kubohiroya/turbowarp-time-space-sync": "^0.8.0",
+    "@kubohiroya/turbowarp-camera-source": "^0.25.1",
+    "@kubohiroya/turbowarp-time-space-sync": "^0.8.1",
     "@sinclair/typebox": "0.34.52",
     "@techstark/opencv-js": "4.12.0-release.1",
     "@tensorflow-models/pose-detection": "2.1.3",
@@ -80,7 +80,7 @@
     "@tensorflow/tfjs-core": "4.22.0",
     "kalidokit": "1.1.5",
     "qrcode": "1.5.4",
-    "@kubohiroya/turbowarp-extension-data-editor": "^0.11.2"
+    "@kubohiroya/turbowarp-extension-data-editor": "^0.11.4"
   },
   "peerDependencies": {
     "@kubohiroya/turbowarp-aframe": "^0.14.0",
